@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 3.9%;
+  --primary: 272 67% 53%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 96.1%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 96.1%;
+  --muted-foreground: 0 0% 45.1%;
+  --accent: 0 0% 96.1%;
+  --accent-foreground: 0 0% 9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 89.8%;
+  --input: 0 0% 89.8%;
+  --ring: 272 67% 53%;
+  --radius: 1.5rem;
+}
+
+.dark {
+  --background: 0 0% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 272 67% 53%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 14.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;
+  --accent: 0 0% 14.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 14.9%;
+  --input: 0 0% 14.9%;
+  --ring: 272 67% 53%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.auth-container {
+  @apply container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0;
+}
+
+.auth-left-panel {
+  @apply relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r overflow-hidden;
+}
+
+.auth-gradient-overlay {
+  @apply absolute inset-0 rounded-[2rem];
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #ec4899 100%);
+}
+
+.auth-content {
+  @apply lg:p-8 relative z-10;
+}
+
+.auth-form-container {
+  @apply mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[450px];
+}
+
+.auth-logo {
+  @apply relative z-20 flex items-center text-xl font-semibold;
+}
+
+.auth-heading {
+  @apply text-4xl font-bold tracking-tight;
+  background: linear-gradient(to right, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-subheading {
+  @apply text-base text-muted-foreground mt-3;
+}
+
+.auth-form {
+  @apply space-y-6 bg-white/95 backdrop-blur-xl p-8 rounded-[1.5rem] shadow-xl border border-gray-100;
+}
+
+.auth-input {
+  @apply h-12 rounded-xl border-gray-200 bg-white/90 px-4;
+  transition: all 0.2s ease-in-out;
+}
+
+.auth-input:focus {
+  @apply border-purple-400 ring-2 ring-purple-100 bg-white;
+}
+
+.auth-button {
+  @apply w-full h-12 text-white rounded-xl font-medium transition-all duration-200;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #ec4899 100%);
+}
+
+.auth-button:hover {
+  @apply transform scale-[0.98] opacity-90;
+}
+
+.auth-button:active {
+  @apply transform scale-[0.97];
+}
+
+.auth-link {
+  @apply text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline transition-colors;
+}
+
+.auth-avatar-stack {
+  @apply flex -space-x-4 mt-8;
+}
+
+.auth-avatar {
+  @apply w-12 h-12 rounded-full border-2 border-white overflow-hidden transition-transform duration-200;
+}
+
+.auth-avatar:hover {
+  @apply transform scale-110 z-10;
+}
+
+.curved-line {
+  @apply absolute z-10 w-full h-full top-0 left-0 opacity-20;
+}
+
+.form-label {
+  @apply text-sm font-medium text-gray-700 mb-1;
+}
+
+.form-message {
+  @apply text-sm text-red-500 mt-1;
+}
+
+/* Decorative elements */
+.bg-dots {
+  background-image: radial-gradient(circle, #6366f1 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.1;
+}
+
+.floating-shapes::before {
+  content: '';
+  @apply absolute w-64 h-64 rounded-full bg-purple-500/10 -top-32 -right-32 blur-3xl;
+}
+
+.floating-shapes::after {
+  content: '';
+  @apply absolute w-64 h-64 rounded-full bg-pink-500/10 -bottom-32 -left-32 blur-3xl;
+}
