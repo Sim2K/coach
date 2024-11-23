@@ -25,13 +25,13 @@ const menuItems = [
   { name: "Profile", href: "/profile", Icon: UserIcon },
   { name: "Update Key", href: "/update-key", Icon: Key },
   { name: "Goals", href: "/goals", Icon: Target },
-  { name: "Smart Goals", href: "/smart-goals", Icon: Crosshair },
-  { name: "Feedback", href: "/feedback", Icon: MessageSquare },
-  { name: "Engagement", href: "/engagement", Icon: Activity },
-  { name: "Milestones", href: "/milestones", Icon: Flag },
-  { name: "Settings", href: "/settings", Icon: Settings },
+  { name: "Smart Goals", href: "/soon-come", Icon: Crosshair },
+  { name: "Feedback", href: "/soon-come", Icon: MessageSquare },
+  { name: "Engagement", href: "/soon-come", Icon: Activity },
+  { name: "Milestones", href: "/soon-come", Icon: Flag },
+  { name: "Settings", href: "/soon-come", Icon: Settings },
   { name: "Updates", href: "/updates", Icon: Bell },
-  { name: "Preferences", href: "/preferences", Icon: Heart },
+  { name: "Preferences", href: "/soon-come", Icon: Heart },
 ];
 
 export function Sidebar() {

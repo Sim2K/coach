@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -68,6 +68,17 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized }: G
     is_completed: boolean;
     effort_level: number;
   } | null>(null);
+
+  useEffect(() => {
+    setFormData({
+      goal_description: goal.goal_description,
+      goal_type: goal.goal_type || "",
+      target_date: goal.target_date || "",
+      progress: goal.progress || 0,
+      effort_level: goal.effort_level || 3,
+      is_completed: goal.is_completed || false,
+    });
+  }, [goal]);
 
   const handleComplete = useCallback(async () => {
     setIsLoading(true);
