@@ -76,7 +76,7 @@ export function GoalsList({ goals, selectedGoal, onSelectGoal, onGoalCreated }: 
             </div>
             <div className="flex justify-between text-sm text-gray-500">
               <span>{goal.progress}% complete</span>
-              <span>{goal.milestones[0].count} milestones</span>
+              <span>{goal.milestones?.[0]?.count ?? 0} milestones</span>
             </div>
           </div>
         ))}
