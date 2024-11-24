@@ -150,87 +150,95 @@ export function RegisterForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="auth-form">
-        <FormField
-          control={form.control}
-          name="firstName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>First Name</FormLabel>
-              <FormControl>
-                <Input className="auth-input" placeholder="John" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="lastName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Last Name</FormLabel>
-              <FormControl>
-                <Input className="auth-input" placeholder="Doe" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">First Name</FormLabel>
+                <FormControl>
+                  <Input className="auth-input" placeholder="John" {...field} />
+                </FormControl>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Last Name</FormLabel>
+                <FormControl>
+                  <Input className="auth-input" placeholder="Doe" {...field} />
+                </FormControl>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        </div>
+        
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel className="text-sm font-medium">Email</FormLabel>
               <FormControl>
-                <Input className="auth-input" placeholder="name@example.com" {...field} />
+                <Input className="auth-input" type="email" placeholder="name@example.com" {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-xs" />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input className="auth-input" type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Password</FormLabel>
+                <FormControl>
+                  <Input className="auth-input" type="password" placeholder="••••••••" {...field} />
+                </FormControl>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="loginKey"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Login Key (case-sensitive)</FormLabel>
+                <FormControl>
+                  <Input className="auth-input" placeholder="Create a unique key" {...field} />
+                </FormControl>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <FormField
           control={form.control}
           name="nickName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nickname</FormLabel>
+              <FormLabel className="text-sm font-medium">Your Nickname (Optional)</FormLabel>
               <FormControl>
-                <Input className="auth-input" placeholder="johndoe" {...field} />
+                <Input className="auth-input" placeholder="How should we call you?" {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-xs" />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="loginKey"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Your login key</FormLabel>
-              <FormControl>
-                <Input className="auth-input" placeholder="one word case sensitive" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button className="auth-button" type="submit" disabled={isLoading}>
-          {isLoading ? "Creating account..." : "Sign Up"}
+
+        <Button className="w-full mb-2" type="submit" disabled={isLoading}>
+          {isLoading ? "Creating your account..." : "Create Account"}
         </Button>
       </form>
     </Form>
