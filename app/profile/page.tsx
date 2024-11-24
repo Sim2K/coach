@@ -14,8 +14,6 @@ import { Sidebar } from "@/components/sidebar";
 import { 
   User, 
   Settings, 
-  Target, 
-  Bullseye, 
   MessageSquare, 
   Activity, 
   Flag, 
