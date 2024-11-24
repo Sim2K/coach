@@ -12,24 +12,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-
-interface Update {
-  update_id: string;
-  update_type: string;
-  update_date: string;
-  previous_value: string | null;
-  new_value: string | null;
-  update_reason: string | null;
-  source: string | null;
-  notes: string | null;
-  update_title: string | null;
-  reverted: boolean;
-  revert_date: string | null;
-  fk_goal: string | null;
-  fk_milestone: string | null;
-  goals?: { goal_description: string } | null;
-  milestones?: { milestone_description: string } | null;
-}
+import { Update } from "@/types/update";
 
 interface UpdateDetailsProps {
   update: Update;
@@ -42,18 +25,12 @@ export function UpdateDetails({ update, onUpdate, onToggleMaximize, isMaximized 
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    update_type: update.update_type,
-    previous_value: update.previous_value || "",
-    new_value: update.new_value || "",
-    update_reason: update.update_reason || "",
-    source: update.source || "",
-    notes: update.notes || "",
-    update_title: update.update_title || "",
+    update_description: update.update_description,
   });
 
   const handleUpdate = async () => {
-    if (!formData.update_type || !formData.notes || !formData.update_title) {
-      toast.error("Title, type and notes are required");
+    if (!formData.update_description) {
+      toast.error("Description is required");
       return;
     }
 
@@ -62,13 +39,7 @@ export function UpdateDetails({ update, onUpdate, onToggleMaximize, isMaximized 
       const { error } = await supabase
         .from("updates")
         .update({
-          update_type: formData.update_type,
-          previous_value: formData.previous_value,
-          new_value: formData.new_value,
-          update_reason: formData.update_reason,
-          source: formData.source,
-          notes: formData.notes,
-          update_title: formData.update_title,
+          update_description: formData.update_description,
         })
         .eq("update_id", update.update_id);
 
@@ -209,55 +180,10 @@ export function UpdateDetails({ update, onUpdate, onToggleMaximize, isMaximized 
             </div>
 
             <div>
-              <Label>Title</Label>
-              <Input
-                value={formData.update_title}
-                onChange={(e) => setFormData({ ...formData, update_title: e.target.value })}
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div>
-              <Label>Previous Value</Label>
-              <Input
-                value={formData.previous_value}
-                onChange={(e) => setFormData({ ...formData, previous_value: e.target.value })}
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div>
-              <Label>New Value</Label>
-              <Input
-                value={formData.new_value}
-                onChange={(e) => setFormData({ ...formData, new_value: e.target.value })}
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div>
-              <Label>Update Reason</Label>
-              <Input
-                value={formData.update_reason}
-                onChange={(e) => setFormData({ ...formData, update_reason: e.target.value })}
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div>
-              <Label>Source</Label>
-              <Input
-                value={formData.source}
-                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div>
-              <Label>Notes</Label>
+              <Label>Description</Label>
               <Textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                value={formData.update_description}
+                onChange={(e) => setFormData({ ...formData, update_description: e.target.value })}
                 disabled={!isEditing}
                 className="min-h-[100px]"
               />

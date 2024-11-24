@@ -5,18 +5,7 @@ import { Clock, PlusCircle, RefreshCw } from "lucide-react";
 import { NewUpdateDialog } from "./new-update-dialog";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-
-interface Update {
-  update_id: string;
-  update_type: string;
-  update_date: string;
-  notes: string;
-  update_title: string;
-  source: string;
-  reverted: boolean;
-  goals?: { goal_description: string } | null;
-  milestones?: { milestone_description: string } | null;
-}
+import { Update } from "@/types/update";
 
 interface UpdatesListProps {
   updates: Update[];
@@ -72,7 +61,7 @@ export function UpdatesList({ updates, selectedUpdate, onSelectUpdate, onUpdateC
               )}
             </div>
             
-            <p className="text-sm text-gray-600 mb-2 line-clamp-2">{update.update_title}</p>
+            <p className="text-sm text-gray-600 mb-2 line-clamp-2">{update.update_description}</p>
             
             {(update.goals?.goal_description || update.milestones?.milestone_description) && (
               <p className="text-xs text-gray-500 mb-2">

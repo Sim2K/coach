@@ -7,11 +7,12 @@ import { UpdatesList } from "@/components/updates/updates-list";
 import { UpdateDetails } from "@/components/updates/update-details";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { Update } from "@/types/update";
 
 export default function UpdatesPage() {
   const router = useRouter();
-  const [updates, setUpdates] = useState([]);
-  const [selectedUpdate, setSelectedUpdate] = useState(null);
+  const [updates, setUpdates] = useState<Update[]>([]);
+  const [selectedUpdate, setSelectedUpdate] = useState<Update | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMaximized, setIsMaximized] = useState(false);
 
