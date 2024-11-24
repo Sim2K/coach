@@ -17,7 +17,9 @@ interface UpdatesListProps {
 export function UpdatesList({ updates, selectedUpdate, onSelectUpdate, onUpdateCreated }: UpdatesListProps) {
   const [showNewUpdate, setShowNewUpdate] = useState(false);
 
-  const getUpdateTypeColor = (type: string) => {
+  const getUpdateTypeColor = (type?: string) => {
+    if (!type) return 'bg-gray-100 text-gray-800';
+    
     const colors: { [key: string]: string } = {
       'progress': 'bg-blue-100 text-blue-800',
       'milestone': 'bg-green-100 text-green-800',
