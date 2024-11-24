@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Trash2, MessageSquare, AlertTriangle, CheckCircle, AlertCircle, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Feedback } from "@/types/feedback";
 
 const getFeedbackIcon = (type: string) => {
   const icons = {
@@ -20,10 +21,10 @@ const getFeedbackIcon = (type: string) => {
 };
 
 export function FeedbackList({ goalId }: { goalId: string }) {
-  const [feedback, setFeedback] = useState([]);
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchFeedback = async () => {
+  const fetchFeedback = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("feedback")
@@ -32,17 +33,18 @@ export function FeedbackList({ goalId }: { goalId: string }) {
         .order("feedback_date", { ascending: false });
 
       if (error) throw error;
-      setFeedback(data);
-    } catch (error) {
+      setFeedback(data || []);
+    } catch (error: unknown) {
+      console.error('Error loading feedback:', error);
       toast.error("Error loading feedback");
     } finally {
       setLoading(false);
     }
-  };
+  }, [goalId]);
 
   useEffect(() => {
     fetchFeedback();
-  }, [goalId]);
+  }, [fetchFeedback]);
 
   const handleDelete = async (feedbackId: string) => {
     try {
@@ -54,7 +56,8 @@ export function FeedbackList({ goalId }: { goalId: string }) {
       if (error) throw error;
       toast.success("Feedback deleted successfully");
       fetchFeedback();
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Error deleting feedback:', error);
       toast.error("Error deleting feedback");
     }
   };
@@ -70,7 +73,7 @@ export function FeedbackList({ goalId }: { goalId: string }) {
           <p className="text-center text-gray-500">No feedback found</p>
         ) : (
           <div className="space-y-4">
-            {feedback.map((item: any) => (
+            {feedback.map((item: Feedback) => (
               <div
                 key={item.feedback_id}
                 className="p-6 border rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-200"
