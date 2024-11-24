@@ -6,8 +6,8 @@ import { Hexagon } from "lucide-react";
 
 export default function RegisterPage() {
   return (
-    <div className="auth-container">
-      <div className="auth-left-panel">
+    <div className="min-h-screen flex flex-col-reverse md:flex-row">
+      <div className="w-full md:w-1/2 relative bg-primary text-primary-foreground p-4 md:p-8 flex flex-col overflow-hidden min-h-[50vh] md:min-h-screen">
         <div className="auth-gradient-overlay" />
         <div className="bg-dots absolute inset-0 opacity-10" />
         <div className="floating-shapes" />
@@ -15,8 +15,8 @@ export default function RegisterPage() {
           <Hexagon className="mr-2 h-8 w-8" />
           Another Veedence.co.uk idea
         </div>
-        <div className="relative z-20 flex flex-col justify-center h-[calc(100%-200px)]">
-          <h1 className="text-3xl font-bold leading-relaxed max-w-xl italic font-serif text-center mx-auto">
+        <div className="relative z-20 flex flex-col justify-center flex-1 px-4 md:px-8">
+          <h1 className="text-2xl md:text-3xl font-bold leading-relaxed max-w-xl italic font-serif text-center mx-auto">
             Start Your Journey with Veedence! Sign up now to unlock personalized, AI-powered coaching tailored just for you. Your goals, milestones, and progress—everything in one seamless platform!
           </h1>
           <div className="auth-avatar-stack mt-auto">
@@ -44,8 +44,8 @@ export default function RegisterPage() {
           />
         </svg>
       </div>
-      <div className="auth-content">
-        <div className="auth-form-container">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8">
+        <div className="w-full max-w-md mx-4 md:mx-0 space-y-6">
           <div className="text-center">
             <h2 className="auth-heading">Sign Up!</h2>
             <p className="auth-subheading mb-3">

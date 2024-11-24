@@ -65,8 +65,7 @@
 }
 
 .auth-gradient-overlay {
-  @apply absolute inset-0 rounded-[2rem];
-  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #ec4899 100%);
+  @apply absolute inset-0 bg-gradient-to-b from-primary/50 to-primary;
 }
 
 .auth-content {
@@ -82,14 +81,14 @@
 }
 
 .auth-heading {
-  @apply text-4xl font-bold tracking-tight;
+  @apply text-2xl font-bold tracking-tight;
   background: linear-gradient(to right, #8b5cf6, #ec4899);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .auth-subheading {
-  @apply text-base text-muted-foreground mt-3;
+  @apply text-sm text-muted-foreground;
 }
 
 .auth-form {
@@ -123,19 +122,15 @@
 }
 
 .auth-avatar-stack {
-  @apply flex -space-x-4 mt-8;
+  @apply flex -space-x-4 rtl:space-x-reverse mt-6;
 }
 
 .auth-avatar {
-  @apply w-12 h-12 rounded-full border-2 border-white overflow-hidden transition-transform duration-200;
-}
-
-.auth-avatar:hover {
-  @apply transform scale-110 z-10;
+  @apply relative w-10 h-10 overflow-hidden rounded-full border-2 border-background;
 }
 
 .curved-line {
-  @apply absolute z-10 w-full h-full top-0 left-0 opacity-20;
+  @apply absolute bottom-0 left-0 w-full h-24 text-muted stroke-current opacity-20;
 }
 
 .form-label {
@@ -148,9 +143,8 @@
 
 /* Decorative elements */
 .bg-dots {
-  background-image: radial-gradient(circle, #6366f1 1px, transparent 1px);
-  background-size: 20px 20px;
-  opacity: 0.1;
+  background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 .floating-shapes::before {
@@ -161,4 +155,41 @@
 .floating-shapes::after {
   content: '';
   @apply absolute w-64 h-64 rounded-full bg-pink-500/10 -bottom-32 -left-32 blur-3xl;
+}
+
+@layer components {
+  .auth-container {
+    @apply min-h-screen flex;
+  }
+
+  .auth-left-panel {
+    @apply relative w-1/2 bg-primary text-primary-foreground p-8 flex flex-col overflow-hidden;
+  }
+
+  .auth-content {
+    @apply w-1/2 flex items-center justify-center p-8;
+  }
+
+  .auth-form-container {
+    @apply w-full max-w-md space-y-6;
+  }
+
+  /* Mobile styles */
+  @screen sm {
+    .auth-container {
+      @apply flex-col-reverse;
+    }
+
+    .auth-left-panel {
+      @apply w-full min-h-[50vh] p-4;
+    }
+
+    .auth-content {
+      @apply w-full p-4;
+    }
+
+    .auth-form-container {
+      @apply max-w-full mx-4;
+    }
+  }
 }
