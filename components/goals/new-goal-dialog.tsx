@@ -9,7 +9,6 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Goal } from "@/types/goal";
 
 interface NewGoalDialogProps {
   open: boolean;

@@ -10,15 +10,7 @@ import { MilestoneDialog } from "./milestone-dialog";
 import { CompletionDialog } from "@/components/ui/completion-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-
-interface Milestone {
-  milestone_id: string;
-  milestone_description: string;
-  target_date: string;
-  achieved: boolean;
-  achievement_date: string | null;
-  review_previous_milestone?: any;
-}
+import { Milestone } from "@/types/milestone";
 
 export function MilestonesList({ goalId }: { goalId: string }) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);

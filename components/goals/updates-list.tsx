@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Trash2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Update } from "@/types/update";
 
 export function UpdatesList({ goalId }: { goalId: string }) {
-  const [updates, setUpdates] = useState([]);
+  const [updates, setUpdates] = useState<Update[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchUpdates = async () => {
+  const fetchUpdates = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("updates")
@@ -27,11 +28,11 @@ export function UpdatesList({ goalId }: { goalId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [goalId]);
 
   useEffect(() => {
     fetchUpdates();
-  }, [goalId]);
+  }, [fetchUpdates]);
 
   const handleDelete = async (updateId: string) => {
     try {
@@ -59,7 +60,7 @@ export function UpdatesList({ goalId }: { goalId: string }) {
           <p className="text-center text-gray-500">No updates found</p>
         ) : (
           <div className="space-y-4">
-            {updates.map((update: any) => (
+            {updates.map((update: Update) => (
               <div
                 key={update.update_id}
                 className="p-6 border rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-200"

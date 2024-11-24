@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback,useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Trash2, Users, ThumbsUp, ThumbsDown, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Engagement } from "@/types/engagement";
 
 const getSentimentIcon = (sentiment: string) => {
   switch (sentiment.toLowerCase()) {
@@ -20,10 +21,10 @@ const getSentimentIcon = (sentiment: string) => {
 };
 
 export function EngagementsList({ goalId }: { goalId: string }) {
-  const [engagements, setEngagements] = useState([]);
+  const [engagements, setEngagements] = useState<Engagement[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchEngagements = async () => {
+  const fetchEngagements = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("engagement")
@@ -38,11 +39,11 @@ export function EngagementsList({ goalId }: { goalId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [goalId]);
 
   useEffect(() => {
     fetchEngagements();
-  }, [goalId]);
+  }, [fetchEngagements]);
 
   const handleDelete = async (engagementId: string) => {
     try {
@@ -70,7 +71,7 @@ export function EngagementsList({ goalId }: { goalId: string }) {
           <p className="text-center text-gray-500">No engagements found</p>
         ) : (
           <div className="space-y-4">
-            {engagements.map((engagement: any) => (
+            {engagements.map((engagement: Engagement) => (
               <div
                 key={engagement.engagement_id}
                 className="p-6 border rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-200"
