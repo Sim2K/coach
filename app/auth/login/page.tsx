@@ -44,8 +44,8 @@ export default function LoginPage() {
             </svg>
             Accountability and Life Coach by Veedence
           </div>
-          <div className="relative z-20 mt-auto space-y-6">
-            <h2 className="text-4xl font-bold tracking-tight mb-6">
+          <div className="relative z-20 flex flex-col justify-center flex-1 max-w-2xl mx-auto">
+            <h2 className="text-4xl font-bold tracking-tight mb-6 text-center">
               Discover the Future of Coaching
             </h2>
             <div className="space-y-4 text-base">
