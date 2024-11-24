@@ -90,8 +90,11 @@ export function LoginForm() {
           )}
         />
         <Button className="w-full" type="submit" disabled={isLoading}>
-          {isLoading ? "Signing in..." : "Sign In"}
+          {isLoading ? "Logging in..." : "Log In"}
         </Button>
+        <p className="text-sm text-gray-600">
+          New here? Create an account now and start your coaching journey!
+        </p>
       </form>
     </Form>
   );
