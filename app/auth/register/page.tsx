@@ -15,16 +15,11 @@ export default function RegisterPage() {
           <Hexagon className="mr-2 h-8 w-8" />
           Another Veedence.co.uk idea
         </div>
-        <div className="relative z-20 mt-auto">
-          <h1 className="text-6xl font-bold mb-6 leading-tight">
-            Calling all
-            <br />
-            <span className="italic font-serif">Fabulous</span>
-            <br />
-            Creators
-            <br />& Brands!
+        <div className="relative z-20 flex flex-col justify-center h-[calc(100%-200px)]">
+          <h1 className="text-3xl font-bold leading-relaxed max-w-xl italic font-serif text-center mx-auto">
+            Start Your Journey with Veedence! Sign up now to unlock personalized, AI-powered coaching tailored just for you. Your goals, milestones, and progress—everything in one seamless platform!
           </h1>
-          <div className="auth-avatar-stack">
+          <div className="auth-avatar-stack mt-auto">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="auth-avatar">
                 <img
@@ -53,14 +48,14 @@ export default function RegisterPage() {
         <div className="auth-form-container">
           <div className="text-center">
             <h2 className="auth-heading">Sign Up!</h2>
-            <p className="auth-subheading">
+            <p className="auth-subheading mb-3">
               You are just a few mins away from getting your personal Accountability Life Coach!
             </p>
           </div>
           <RegisterForm />
           <p className="text-center">
             <Link href="/auth/login" className="auth-link">
-              Already have an account, then what are you doing here?!?!? Sign In!
+              Already have an account, then what are you doing here?! Sign in here to continue achieving your goals!!
             </Link>
           </p>
         </div>
