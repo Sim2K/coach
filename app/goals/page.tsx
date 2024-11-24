@@ -7,11 +7,12 @@ import { GoalsList } from "@/components/goals/goals-list";
 import { GoalDetails } from "@/components/goals/goal-details";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { Goal } from "@/types/goal";
 
 export default function GoalsPage() {
   const router = useRouter();
-  const [goals, setGoals] = useState([]);
-  const [selectedGoal, setSelectedGoal] = useState(null);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMaximized, setIsMaximized] = useState(false);
 

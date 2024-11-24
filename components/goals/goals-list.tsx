@@ -6,15 +6,7 @@ import { PlusCircle, CheckCircle2 } from "lucide-react";
 import { NewGoalDialog } from "./new-goal-dialog";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
-interface Goal {
-  goal_id: string;
-  goal_description: string;
-  progress: number;
-  milestones: { count: number }[];
-  effort_level: number;
-  is_completed: boolean;
-}
+import { Goal } from "@/types/goal";
 
 interface GoalsListProps {
   goals: Goal[];

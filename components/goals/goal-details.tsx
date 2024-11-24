@@ -17,6 +17,7 @@ import { UpdatesList } from "./updates-list";
 import { EngagementsList } from "./engagements-list";
 import { FeedbackList } from "./feedback-list";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Goal } from "@/types/goal";
 
 const getEffortLevelColor = (level: number) => {
   const colors = {
@@ -28,18 +29,6 @@ const getEffortLevelColor = (level: number) => {
   };
   return colors[level as keyof typeof colors] || colors[3];
 };
-
-interface Goal {
-  goal_id: string;
-  goal_description: string;
-  goal_type?: string;
-  target_date?: string;
-  progress?: number;
-  effort_level?: number;
-  is_completed?: boolean;
-  review_needed?: boolean;
-  review_previous_goal?: any;
-}
 
 interface GoalDetailsProps {
   goal: Goal;
