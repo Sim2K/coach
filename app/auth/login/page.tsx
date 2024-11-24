@@ -26,8 +26,8 @@ export default function LoginPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
-        <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
+      <div className="min-h-screen flex flex-col-reverse md:flex-row">
+        <div className="w-full md:w-1/2 relative bg-muted flex flex-col overflow-hidden min-h-[50vh] md:min-h-screen text-white p-4 md:p-8">
           <div className="absolute inset-0 bg-gradient-to-b from-purple-600 to-indigo-600" />
           <div className="relative z-20 flex items-center text-lg font-medium">
             <svg
@@ -44,15 +44,15 @@ export default function LoginPage() {
             </svg>
             Accountability and Life Coach by Veedence
           </div>
-          <div className="relative z-20 flex flex-col justify-center flex-1 max-w-2xl mx-auto">
-            <h2 className="text-4xl font-bold tracking-tight mb-6 text-center">
+          <div className="relative z-20 flex flex-col justify-center flex-1 max-w-2xl mx-auto px-4 md:px-8">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6 text-center mt-8 md:mt-0">
               Discover the Future of Coaching
             </h2>
             <div className="space-y-4 text-base">
               <p>
                 Ready to achieve your goals with a coach that remembers every detail? Veedence Accountability Coaching, powered by advanced AI and ChatGPT, is here to help you stay on track, uncover hidden potential, and reach new heights.
               </p>
-              <ul className="space-y-3">
+              <ul className="space-y-3 md:space-y-4">
                 <li className="flex items-start">
                   <span className="font-semibold mr-2">✦</span>
                   <span><strong>Personalized Guidance:</strong> Tailored coaching designed around your unique goals and milestones.</span>
@@ -66,24 +66,24 @@ export default function LoginPage() {
                   <span><strong>Always Here for You:</strong> Unlike traditional coaches, this AI-powered coach is available 24/7 to help you succeed.</span>
                 </li>
               </ul>
-              <p className="mt-4">
+              <p className="mt-4 mb-12 md:mb-4">
                 Whether you're planning a career change, building better habits, or simply looking for someone to hold you accountable, Veedence is the coaching partner you've been searching for.
               </p>
             </div>
           </div>
         </div>
-        <div className="lg:p-8">
-          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-            <div className="flex flex-col space-y-2 text-center">
+        <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8">
+          <div className="w-full max-w-md mx-4 md:mx-0 space-y-6">
+            <div className="flex flex-col space-y-2 text-center mt-8 md:mt-0">
               <h1 className="text-2xl font-semibold tracking-tight">
                 Log in to Your Coaching Dashboard
               </h1>
               <p className="text-sm text-muted-foreground">
-                Welcome back! Enter your email and password to access your personalized coaching dashboard. Let’s get back to tracking your progress and achieving your goals
+                Welcome back! Enter your email and password to access your personalized coaching dashboard. Let's get back to tracking your progress and achieving your goals
               </p>
             </div>
             <LoginForm />
-            <p className="px-8 text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-muted-foreground mb-8 md:mb-0">
               <Link
                 href="/auth/register"
                 className="hover:text-brand underline underline-offset-4"
