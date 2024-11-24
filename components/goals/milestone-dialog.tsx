@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { Milestone } from "@/types/milestone";
 
 interface MilestoneDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface MilestoneDialogProps {
   milestone: Milestone | null;
   goalId: string;
   onMilestoneChange: () => void;
+  onMilestoneAdded?: () => void;
   previousMilestoneData: {
     milestone_description: string;
     target_date: string;
@@ -24,21 +26,13 @@ interface MilestoneDialogProps {
   } | null;
 }
 
-interface Milestone {
-  milestone_id: string;
-  milestone_description: string;
-  target_date: string;
-  achieved: boolean;
-  achievement_date: string | null;
-  review_previous_milestone?: any;
-}
-
 export function MilestoneDialog({
   open,
   onOpenChange,
   milestone,
   goalId,
   onMilestoneChange,
+  onMilestoneAdded,
   previousMilestoneData,
 }: MilestoneDialogProps) {
   const [formData, setFormData] = useState({
@@ -112,6 +106,7 @@ export function MilestoneDialog({
 
         if (error) throw error;
         toast.success("Milestone created successfully");
+        if (onMilestoneAdded) onMilestoneAdded();
       }
 
       onMilestoneChange();
@@ -128,6 +123,7 @@ export function MilestoneDialog({
     onMilestoneChange,
     onOpenChange,
     previousMilestoneData,
+    onMilestoneAdded,
   ]);
 
   return (
