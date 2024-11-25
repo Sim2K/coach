@@ -102,11 +102,11 @@ export default function UpdateKeyPage() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       
-      <div className="flex-1 p-8">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Update Login Key</h1>
+      <div className="flex-1 md:ml-0 ml-16">
+        <div className="p-4 md:p-8 max-w-4xl mx-auto">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Update Login Key</h1>
           
-          <Card className="p-6">
+          <Card className="shadow-md p-6">
             <div className="space-y-6">
               <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
                 <p className="text-yellow-700">
