@@ -1,9 +1,10 @@
 "use client";
 
-import Image from "next/image";
+import { Metadata } from "next";
 import Link from "next/link";
-import { LoginForm } from "@/components/auth/login-form";
 import Script from "next/script";
+
+import { LoginForm } from "@/components/auth/login-form";
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -29,6 +30,11 @@ export default function LoginPage() {
       <div className="min-h-screen flex flex-col-reverse md:flex-row">
         <div className="w-full md:w-1/2 relative bg-muted flex flex-col overflow-hidden min-h-[50vh] md:min-h-screen text-white p-4 md:p-8">
           <div className="absolute inset-0 bg-gradient-to-b from-purple-600 to-indigo-600" />
+          <div className="bg-dots absolute inset-0 opacity-10" />
+          <div className="floating-shapes" />
+          <div className="absolute inset-0 flex items-center justify-center opacity-35 pointer-events-none">
+            <div className="w-48 h-48 bg-[url('/images/svg/veedence_logo.svg')] bg-contain bg-no-repeat bg-center" />
+          </div>
           <div className="relative z-20 flex items-center text-lg font-medium">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -74,6 +80,7 @@ export default function LoginPage() {
         </div>
         <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8">
           <div className="w-full max-w-md mx-4 md:mx-0 space-y-6">
+            <div className="w-48 h-12 bg-[url('/images/svg/veedence_logo_wide.svg')] bg-contain bg-no-repeat bg-left mb-8" />
             <div className="flex flex-col space-y-2 text-center mt-8 md:mt-0">
               <h1 className="text-2xl font-semibold tracking-tight">
                 Log in to Your Coaching Dashboard
