@@ -15,6 +15,7 @@ export default function GoalsPage() {
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [showDetailsOnMobile, setShowDetailsOnMobile] = useState(false);
 
   const fetchGoals = async () => {
     try {
@@ -37,6 +38,7 @@ export default function GoalsPage() {
       setGoals(data);
       if (data.length > 0 && !selectedGoal) {
         setSelectedGoal(data[0]);
+        setShowDetailsOnMobile(false);
       }
     } catch (error) {
       toast.error("Error loading goals");
@@ -61,25 +63,27 @@ export default function GoalsPage() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       
-      <div className="flex-1 flex">
-        {!isMaximized && (
-          <div className="w-1/3 border-r border-gray-200 bg-white p-6">
-            <GoalsList 
-              goals={goals} 
-              selectedGoal={selectedGoal}
-              onSelectGoal={setSelectedGoal}
-              onGoalCreated={fetchGoals}
-            />
-          </div>
-        )}
+      <div className="flex-1 flex md:ml-0 ml-16">
+        <div className={`${showDetailsOnMobile ? 'hidden md:block' : 'block'} w-full md:w-1/3 border-r border-gray-200 bg-white p-4 md:p-6`}>
+          <GoalsList 
+            goals={goals} 
+            selectedGoal={selectedGoal}
+            onSelectGoal={(goal) => {
+              setSelectedGoal(goal);
+              setShowDetailsOnMobile(true);
+            }}
+            onGoalCreated={fetchGoals}
+          />
+        </div>
         
-        <div className={`${isMaximized ? 'w-full' : 'w-2/3'} p-6`}>
+        <div className={`${!showDetailsOnMobile ? 'hidden md:block' : 'block'} w-full md:w-2/3 p-4 md:p-6`}>
           {selectedGoal ? (
             <GoalDetails 
               goal={selectedGoal} 
               onUpdate={fetchGoals}
               onToggleMaximize={() => setIsMaximized(!isMaximized)}
               isMaximized={isMaximized}
+              onBack={() => setShowDetailsOnMobile(false)}
             />
           ) : (
             <div className="flex items-center justify-center h-full">
