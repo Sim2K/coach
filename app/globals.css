@@ -143,18 +143,18 @@
 
 /* Decorative elements */
 .bg-dots {
-  background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
-.floating-shapes::before {
-  content: '';
-  @apply absolute w-64 h-64 rounded-full bg-purple-500/10 -top-32 -right-32 blur-3xl;
-}
-
-.floating-shapes::after {
-  content: '';
-  @apply absolute w-64 h-64 rounded-full bg-pink-500/10 -bottom-32 -left-32 blur-3xl;
+.floating-shapes {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  mask-image: radial-gradient(white, transparent);
+  -webkit-mask-image: radial-gradient(white, transparent);
+  mix-blend-mode: overlay;
+  opacity: 0.2;
 }
 
 @layer components {
@@ -191,5 +191,11 @@
     .auth-form-container {
       @apply max-w-full mx-4;
     }
+  }
+}
+
+@layer utilities {
+  .opacity-35 {
+    opacity: 0.37;
   }
 }

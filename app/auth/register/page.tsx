@@ -7,10 +7,13 @@ import { Hexagon } from "lucide-react";
 export default function RegisterPage() {
   return (
     <div className="min-h-screen flex flex-col-reverse md:flex-row">
-      <div className="w-full md:w-1/2 relative bg-primary text-primary-foreground p-4 md:p-8 flex flex-col overflow-hidden min-h-[50vh] md:min-h-screen">
-        <div className="auth-gradient-overlay" />
+      <div className="w-full md:w-1/2 relative bg-muted flex flex-col overflow-hidden min-h-[50vh] md:min-h-screen text-white p-4 md:p-8">
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-600 to-indigo-600" />
         <div className="bg-dots absolute inset-0 opacity-10" />
         <div className="floating-shapes" />
+        <div className="absolute inset-0 flex items-center justify-center opacity-35 pointer-events-none">
+          <div className="w-48 h-48 bg-[url('/images/svg/veedence_logo.svg')] bg-contain bg-no-repeat bg-center" />
+        </div>
         <div className="auth-logo">
           <Hexagon className="mr-2 h-8 w-8" />
           Another Veedence.co.uk idea
@@ -46,7 +49,8 @@ export default function RegisterPage() {
       </div>
       <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8">
         <div className="w-full max-w-md mx-4 md:mx-0 space-y-6">
-          <div className="text-center">
+          <div className="w-48 h-12 bg-[url('/images/svg/veedence_logo_wide.svg')] bg-contain bg-no-repeat bg-left mb-8" />
+          <div className="flex flex-col space-y-2 text-center">
             <h2 className="auth-heading">Sign Up!</h2>
             <p className="auth-subheading mb-3">
               You are just a few mins away from getting your personal Accountability Life Coach!
