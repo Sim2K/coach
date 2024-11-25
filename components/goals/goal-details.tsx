@@ -6,9 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, Maximize2, Minimize2 } from "lucide-react";
+import { CheckCircle2, ChevronLeft, Maximize2, Minimize2, ChevronDown } from "lucide-react";
 import { CompletionDialog } from "@/components/ui/completion-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -17,6 +16,12 @@ import { UpdatesList } from "./updates-list";
 import { EngagementsList } from "./engagements-list";
 import { FeedbackList } from "./feedback-list";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Goal } from "@/types/goal";
 
 const getEffortLevelColor = (level: number) => {
@@ -35,11 +40,18 @@ interface GoalDetailsProps {
   onUpdate: () => void;
   onToggleMaximize?: () => void;
   isMaximized?: boolean;
+  onBack?: () => void;
 }
 
-export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized }: GoalDetailsProps) {
+export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onBack }: GoalDetailsProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [counts, setCounts] = useState({
+    milestones: 0,
+    updates: 0,
+    engagements: 0,
+    feedback: 0
+  });
   const [formData, setFormData] = useState({
     goal_description: goal.goal_description,
     goal_type: goal.goal_type || "",
@@ -68,6 +80,50 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized }: G
       is_completed: goal.is_completed || false,
     });
   }, [goal]);
+
+  useEffect(() => {
+    async function fetchCounts() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const [
+          milestonesData,
+          updatesData,
+          engagementsData,
+          feedbackData
+        ] = await Promise.all([
+          supabase
+            .from('milestones')
+            .select('*', { count: 'exact' })
+            .eq('goal_id', goal.goal_id),
+          supabase
+            .from('updates')
+            .select('*', { count: 'exact' })
+            .eq('goal_id', goal.goal_id),
+          supabase
+            .from('engagements')
+            .select('*', { count: 'exact' })
+            .eq('goal_id', goal.goal_id),
+          supabase
+            .from('feedback')
+            .select('*', { count: 'exact' })
+            .eq('goal_id', goal.goal_id)
+        ]);
+
+        setCounts({
+          milestones: milestonesData.count || 0,
+          updates: updatesData.count || 0,
+          engagements: engagementsData.count || 0,
+          feedback: feedbackData.count || 0
+        });
+      } catch (error) {
+        console.error('Error fetching counts:', error);
+      }
+    }
+
+    fetchCounts();
+  }, [goal.goal_id]);
 
   const handleComplete = useCallback(async () => {
     setIsLoading(true);
@@ -167,53 +223,103 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized }: G
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Goal Details</h2>
-        <div className="flex items-center space-x-2">
+      {/* Back button row */}
+      {onBack && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={onBack}
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+      )}
+
+      {/* Title row */}
+      <div className="flex flex-col md:flex-row md:justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">{goal.goal_description}</h2>
+        
+        {/* Actions - mobile view */}
+        <div className="flex gap-2 mt-4 md:hidden">
           {!isEditing ? (
             <>
               <Button
-                variant="ghost"
-                size="icon"
-                onClick={onToggleMaximize}
-                className="mr-2"
+                className="flex-1"
+                onClick={() => setIsEditing(true)}
               >
-                {isMaximized ? (
-                  <Minimize2 className="h-5 w-5" />
-                ) : (
-                  <Maximize2 className="h-5 w-5" />
-                )}
+                Edit Goal
               </Button>
-              <Button onClick={() => {
-                if (!goal.review_previous_goal) {
-                  const capturedData = {
-                    goal_description: goal.goal_description,
-                    goal_type: goal.goal_type || "",
-                    target_date: goal.target_date || "",
-                    progress: goal.progress || 0,
-                    is_completed: goal.is_completed || false,
-                    effort_level: goal.effort_level || 3,
-                  };
-                  setPreviousGoalData(capturedData);
-                }
-                setIsEditing(true);
-              }}>
-                Edit
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={handleDelete}
+              >
+                Delete Goal
               </Button>
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isLoading}>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setIsEditing(false)}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleUpdate} disabled={isLoading}>
-                Save
+              <Button
+                className="flex-1"
+                onClick={handleUpdate}
+              >
+                Save Changes
               </Button>
             </>
           )}
-          <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
-            Delete
-          </Button>
+        </div>
+
+        {/* Actions - desktop view */}
+        <div className="hidden md:flex md:gap-2">
+          {!isEditing ? (
+            <>
+              {onToggleMaximize && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onToggleMaximize}
+                >
+                  {isMaximized ? (
+                    <Minimize2 className="h-5 w-5" />
+                  ) : (
+                    <Maximize2 className="h-5 w-5" />
+                  )}
+                </Button>
+              )}
+              <Button
+                onClick={() => setIsEditing(true)}
+              >
+                Edit Goal
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+              >
+                Delete Goal
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdate}
+              >
+                Save Changes
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -254,7 +360,8 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized }: G
                 rows={5}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
               <div>
                 <Label htmlFor="goal-type">Type</Label>
                 <Input
@@ -266,6 +373,7 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized }: G
                   disabled={!isEditing || isLoading}
                 />
               </div>
+
               <div>
                 <Label htmlFor="target-date">Target Date</Label>
                 <Input
@@ -279,6 +387,7 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized }: G
                 />
               </div>
             </div>
+
             <div>
               <Label htmlFor="progress">Progress (%)</Label>
               <Slider
@@ -297,6 +406,7 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized }: G
                 {formData.progress}%
               </div>
             </div>
+
             <div>
               <Label>Effort Level</Label>
               <div className="pt-2">
@@ -335,30 +445,55 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized }: G
         message="Completing this Goal will auto complete all connected Milestones!"
       />
 
-      <Tabs defaultValue="milestones" className="w-full">
-        <TabsList className="w-full grid grid-cols-4">
-          <TabsTrigger value="milestones">Milestones</TabsTrigger>
-          <TabsTrigger value="updates">Updates</TabsTrigger>
-          <TabsTrigger value="engagements">Engagements</TabsTrigger>
-          <TabsTrigger value="feedback">Feedback</TabsTrigger>
-        </TabsList>
+      <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="milestones">
+          <AccordionTrigger>
+            <div className="flex items-center gap-2">
+              <span>Milestones</span>
+              <span className="text-sm text-gray-500">({counts.milestones})</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <MilestonesList goalId={goal.goal_id} />
+          </AccordionContent>
+        </AccordionItem>
 
-        <TabsContent value="milestones">
-          <MilestonesList goalId={goal.goal_id} />
-        </TabsContent>
+        <AccordionItem value="updates">
+          <AccordionTrigger>
+            <div className="flex items-center gap-2">
+              <span>Updates</span>
+              <span className="text-sm text-gray-500">({counts.updates})</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <UpdatesList goalId={goal.goal_id} />
+          </AccordionContent>
+        </AccordionItem>
 
-        <TabsContent value="updates">
-          <UpdatesList goalId={goal.goal_id} />
-        </TabsContent>
+        <AccordionItem value="engagements">
+          <AccordionTrigger>
+            <div className="flex items-center gap-2">
+              <span>Engagements</span>
+              <span className="text-sm text-gray-500">({counts.engagements})</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <EngagementsList goalId={goal.goal_id} />
+          </AccordionContent>
+        </AccordionItem>
 
-        <TabsContent value="engagements">
-          <EngagementsList goalId={goal.goal_id} />
-        </TabsContent>
-
-        <TabsContent value="feedback">
-          <FeedbackList goalId={goal.goal_id} />
-        </TabsContent>
-      </Tabs>
+        <AccordionItem value="feedback">
+          <AccordionTrigger>
+            <div className="flex items-center gap-2">
+              <span>Feedback</span>
+              <span className="text-sm text-gray-500">({counts.feedback})</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <FeedbackList goalId={goal.goal_id} />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }
