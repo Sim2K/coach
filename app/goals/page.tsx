@@ -64,19 +64,21 @@ export default function GoalsPage() {
       <Sidebar />
       
       <div className="flex-1 flex md:ml-0 ml-16">
-        <div className={`${showDetailsOnMobile ? 'hidden md:block' : 'block'} w-full md:w-1/3 border-r border-gray-200 bg-white p-4 md:p-6`}>
-          <GoalsList 
-            goals={goals} 
-            selectedGoal={selectedGoal}
-            onSelectGoal={(goal) => {
-              setSelectedGoal(goal);
-              setShowDetailsOnMobile(true);
-            }}
-            onGoalCreated={fetchGoals}
-          />
-        </div>
+        {!isMaximized && (
+          <div className={`${showDetailsOnMobile ? 'hidden md:block' : 'block'} w-full md:w-1/3 border-r border-gray-200 bg-white p-4 md:p-6`}>
+            <GoalsList 
+              goals={goals} 
+              selectedGoal={selectedGoal}
+              onSelectGoal={(goal) => {
+                setSelectedGoal(goal);
+                setShowDetailsOnMobile(true);
+              }}
+              onGoalCreated={fetchGoals}
+            />
+          </div>
+        )}
         
-        <div className={`${!showDetailsOnMobile ? 'hidden md:block' : 'block'} w-full md:w-2/3 p-4 md:p-6`}>
+        <div className={`${!showDetailsOnMobile ? 'hidden md:block' : 'block'} ${isMaximized ? 'w-full' : 'w-full md:w-2/3'} p-4 md:p-6`}>
           {selectedGoal ? (
             <GoalDetails 
               goal={selectedGoal} 
