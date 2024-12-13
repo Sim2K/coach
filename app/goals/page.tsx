@@ -63,7 +63,7 @@ export default function GoalsPage() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       
-      <div className="flex-1 flex md:ml-0 ml-16">
+      <div className="flex-1 flex">
         {!isMaximized && (
           <div className={`${showDetailsOnMobile ? 'hidden md:block' : 'block'} w-full md:w-1/3 border-r border-gray-200 bg-white p-4 md:p-6`}>
             <GoalsList 

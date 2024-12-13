@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Menu, LogOut } from "lucide-react";
+import { Menu, LogOut, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { menuItems } from "./sidebar";
 import { supabase } from "@/lib/supabase";
@@ -26,97 +26,70 @@ export function MobileMenu() {
   };
 
   return (
-    <div className="md:hidden">
-      {/* Icons-only bar when menu is closed */}
+    <div className="block md:hidden">
+      {/* Mobile-only top bar */}
+      <div className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-50">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-gray-600"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <Menu className="h-6 w-6" />
+        </Button>
+        
+        <div className="w-32 h-8 bg-[url('/images/svg/veedence_logo_wide.svg')] bg-contain bg-no-repeat bg-center" />
+        
+        <div className="w-10" />
+      </div>
+
+      {/* Full screen mobile menu overlay */}
       <div className={cn(
-        "fixed left-0 top-0 bottom-0 w-16 bg-white border-r border-gray-200 transition-transform duration-300 flex flex-col",
-        isOpen ? "-translate-x-full" : "translate-x-0"
+        "fixed inset-0 bg-white/95 backdrop-blur-sm z-50 transition-all duration-300",
+        isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       )}>
-        <div className="flex flex-col h-full">
-          {/* Burger Menu Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mt-4 mb-8"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
-
-          <div className="flex flex-col items-center space-y-4 overflow-y-auto py-2">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "p-2 rounded-lg transition-colors",
-                  pathname === item.href
-                    ? "text-purple-600 bg-purple-50"
-                    : "text-gray-600 hover:bg-gray-50"
-                )}
-              >
-                <item.Icon className="h-6 w-6" />
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-auto mb-6 flex justify-center">
+        <div className="flex flex-col h-full pt-16">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
+            <div className="w-32 h-8 bg-[url('/images/svg/veedence_logo_wide.svg')] bg-contain bg-no-repeat bg-center" />
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleSignOut}
-              className="text-red-600 hover:bg-red-50"
+              className="text-gray-600"
+              onClick={() => setIsOpen(false)}
             >
-              <LogOut className="h-6 w-6" />
+              <X className="h-6 w-6" />
             </Button>
           </div>
-        </div>
-      </div>
 
-      {/* Full menu overlay when open */}
-      <div className={cn(
-        "fixed inset-y-0 left-0 bg-white z-40 transition-transform duration-300 w-64 border-r border-gray-200",
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex flex-col h-full">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 left-4"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
-
-          <div className="flex-1 overflow-y-auto pb-24">
-            <div className="pt-20 px-6 space-y-1">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4 space-y-2">
               {menuItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
                   className={cn(
-                    "flex items-center px-4 py-3 text-base font-medium rounded-lg transition-colors",
+                    "flex items-center px-4 py-3 rounded-lg transition-colors",
                     pathname === item.href
                       ? "bg-purple-50 text-purple-600"
-                      : "text-gray-700 hover:bg-gray-50"
+                      : "text-gray-600 hover:bg-gray-50"
                   )}
                 >
                   <item.Icon className="h-5 w-5 mr-3" />
-                  {item.name}
+                  <span className="font-medium">{item.name}</span>
                 </Link>
               ))}
             </div>
           </div>
-          
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+
+          <div className="border-t border-gray-200 p-4">
             <Button
               variant="ghost"
-              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="w-full justify-start text-red-600 hover:bg-red-50"
               onClick={handleSignOut}
             >
               <LogOut className="h-5 w-5 mr-3" />
-              Sign Out
+              <span className="font-medium">Sign Out</span>
             </Button>
           </div>
         </div>

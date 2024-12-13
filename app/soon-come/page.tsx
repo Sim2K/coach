@@ -23,7 +23,7 @@ export default function SoonComePage() {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
-      <main className="flex-1 p-4 md:p-6 md:ml-0 ml-16">
+      <main className="flex-1 p-4 md:p-6">
         <Card className="w-full">
           <CardContent className="flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] text-center p-4 md:p-6 space-y-4">
             <Clock className="w-12 h-12 md:w-16 md:h-16 text-purple-600 animate-pulse" />
