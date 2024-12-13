@@ -52,38 +52,42 @@ export function Sidebar() {
   return (
     <>
       <MobileMenu />
-      <div className="hidden md:flex w-64 bg-white border-r border-gray-200 min-h-screen p-4 flex-col">
-        <div className="flex items-center mb-8 px-2">
-          <Crosshair className="h-6 w-6 text-purple-600 mr-2" />
-          <span className="text-xl font-bold">Ajay Accountability Life Coach by Veedence.co.uk</span>
+      <div className="hidden md:flex w-64 bg-white border-r border-gray-200 min-h-screen flex-col relative">
+        <div className="p-4">
+          <div className="flex items-center mb-8 px-2">
+            <Crosshair className="h-6 w-6 text-purple-600 mr-2" />
+            <span className="text-xl font-bold">Ajay Accountability Life Coach by Veedence.co.uk</span>
+          </div>
+          
+          <nav className="space-y-1 pb-20">
+            {menuItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                  pathname === item.href
+                    ? "bg-purple-50 text-purple-600"
+                    : "text-gray-700 hover:bg-gray-50"
+                )}
+              >
+                <item.Icon className="h-5 w-5 mr-3" />
+                {item.name}
+              </Link>
+            ))}
+          </nav>
         </div>
-        
-        <nav className="space-y-1 flex-1">
-          {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-                pathname === item.href
-                  ? "bg-purple-50 text-purple-600"
-                  : "text-gray-700 hover:bg-gray-50"
-              )}
-            >
-              <item.Icon className="h-5 w-5 mr-3" />
-              {item.name}
-            </Link>
-          ))}
-        </nav>
 
-        <Button
-          variant="ghost"
-          className="w-full justify-start mt-auto text-red-600 hover:text-red-700 hover:bg-red-50"
-          onClick={handleSignOut}
-        >
-          <LogOut className="h-5 w-5 mr-3" />
-          Sign Out
-        </Button>
+        <div className="fixed bottom-0 w-64 bg-white border-t border-gray-200 p-4">
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-5 w-5 mr-3" />
+            Sign Out
+          </Button>
+        </div>
       </div>
     </>
   );

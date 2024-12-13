@@ -124,16 +124,16 @@ export function MilestonesList({ goalId }: { goalId: string }) {
             {milestones.map((milestone) => (
               <div
                 key={milestone.milestone_id}
-                className="p-6 border rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-200"
+                className="p-4 md:p-6 border rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-200"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="font-medium text-gray-900">{milestone.milestone_description}</h3>
+                <div className="flex flex-col md:flex-row justify-between items-start gap-3 mb-3">
+                  <div className="flex items-start md:items-center space-x-2 w-full md:w-auto">
+                    <h3 className="font-medium text-gray-900 break-words">{milestone.milestone_description}</h3>
                     {milestone.achieved && (
-                      <span className="text-xl">🎉</span>
+                      <span className="text-xl flex-shrink-0">🎉</span>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 w-full md:w-auto justify-end">
                     <Button
                       size="sm"
                       variant="ghost"
@@ -187,10 +187,10 @@ export function MilestonesList({ goalId }: { goalId: string }) {
                     </AlertDialog>
                   </div>
                 </div>
-                <div className="flex items-center space-x-4 text-sm text-gray-500">
+                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 text-sm text-gray-500">
                   <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    <span>Target Date: {new Date(milestone.target_date).toLocaleDateString()}</span>
+                    <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
+                    <span>Target: {new Date(milestone.target_date).toLocaleDateString()}</span>
                   </div>
                   <div className="flex items-center">
                     <span>Status: </span>
@@ -200,7 +200,7 @@ export function MilestonesList({ goalId }: { goalId: string }) {
                   </div>
                   {milestone.achievement_date && (
                     <div className="flex items-center">
-                      <CheckCircle2 className="h-4 w-4 mr-1 text-green-500" />
+                      <CheckCircle2 className="h-4 w-4 mr-1 text-green-500 flex-shrink-0" />
                       <span>Completed: {new Date(milestone.achievement_date).toLocaleDateString()}</span>
                     </div>
                   )}
