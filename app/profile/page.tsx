@@ -122,11 +122,11 @@ export default function ProfilePage() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       
-      <div className="flex-1 md:ml-0 ml-16">
+      <div className="flex-1">
         <div className="p-4 md:p-8 max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Profile</h1>
-            <div className="flex flex-wrap gap-2 md:gap-4">
+            <div className="flex flex-wrap gap-2 md:gap-4 pt-4">
               {!isEditing ? (
                 <Button className="w-full md:w-auto" onClick={() => setIsEditing(true)}>
                   Edit Profile
