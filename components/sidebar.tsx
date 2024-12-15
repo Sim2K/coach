@@ -30,7 +30,7 @@ export const menuItems = [
   { name: "Feedback", href: "/soon-come", Icon: MessageSquare },
   { name: "Engagement", href: "/soon-come", Icon: Activity },
   { name: "Milestones", href: "/soon-come", Icon: Flag },
-  { name: "Settings", href: "/soon-come", Icon: Settings },
+  { name: "Settings", href: "/settings", Icon: Settings },
   { name: "Updates", href: "/updates", Icon: Bell },
   { name: "Preferences", href: "/soon-come", Icon: Heart },
 ];
