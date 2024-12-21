@@ -54,7 +54,7 @@ export function BillingSection() {
           Welcome to our unique approach to AI coaching accessibility. We believe that personal growth and professional development should be available to everyone, regardless of their financial situation.
         </p>
         <p className="text-sm sm:text-base">
-          This is a social experiment in value-based pricing. You can choose to pay either what you can afford or what you believe the service is worth. While there's a minimal monthly subscription to maintain service quality (${selectedCurrency?.symbol}{selectedCurrency?.minAmount}), you have the freedom to contribute more if you find value in the AI coaching experience.
+          This is a social experiment in value-based pricing. You can choose to pay either what you can afford or what you believe the service is worth. While there's a minimal monthly subscription to maintain service quality ({selectedCurrency?.symbol}{selectedCurrency?.minAmount}), you have the freedom to contribute more if you find value in the AI coaching experience.
         </p>
         <p className="text-sm sm:text-base">
           Your choice helps us understand how to make AI coaching more accessible while ensuring sustainable service delivery.
@@ -63,32 +63,11 @@ export function BillingSection() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
-          <div className="p-4 border rounded-lg bg-gray-50">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 sm:space-x-2">
-              <div className="space-y-0.5">
-                <Label htmlFor="payment-type" className="text-base">Payment Basis</Label>
-                <p className="text-sm text-gray-500 hidden sm:block">Choose your payment approach</p>
-              </div>
-              <div className="space-y-2 sm:space-y-0">
-                <p className="text-sm text-gray-500 sm:hidden">Choose your payment approach</p>
-                <div className="flex items-center justify-center sm:justify-start space-x-2">
-                  <span className={`text-sm ${paymentType === 'afford' ? 'text-purple-600' : 'text-gray-500'}`}>Afford</span>
-                  <Switch
-                    id="payment-type"
-                    checked={paymentType === 'worth'}
-                    onCheckedChange={(checked) => setPaymentType(checked ? 'worth' : 'afford')}
-                  />
-                  <span className={`text-sm ${paymentType === 'worth' ? 'text-purple-600' : 'text-gray-500'}`}>Worth</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-[1.2fr_2fr_1.2fr] gap-8 items-start">
+            <div>
               <Label htmlFor="currency">Currency</Label>
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger id="currency" className="w-full">
+                <SelectTrigger id="currency" className="mt-2">
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -101,9 +80,9 @@ export function BillingSection() {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="amount">Amount</Label>
-              <div className="relative">
+              <div className="relative mt-2">
                 <span className="absolute left-3 top-2.5 text-gray-500">
                   {selectedCurrency?.symbol}
                 </span>
@@ -118,9 +97,22 @@ export function BillingSection() {
                   required
                 />
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 mt-2">
                 Minimum amount: {selectedCurrency?.symbol}{selectedCurrency?.minAmount}
               </p>
+            </div>
+
+            <div>
+              <Label>Payment Basis</Label>
+              <div className="flex items-center space-x-2 mt-2">
+                <span className={`text-sm ${paymentType === 'afford' ? 'text-purple-600' : 'text-gray-500'}`}>Afford</span>
+                <Switch
+                  id="payment-type"
+                  checked={paymentType === 'worth'}
+                  onCheckedChange={(checked) => setPaymentType(checked ? 'worth' : 'afford')}
+                />
+                <span className={`text-sm ${paymentType === 'worth' ? 'text-purple-600' : 'text-gray-500'}`}>Worth</span>
+              </div>
             </div>
           </div>
 
