@@ -79,6 +79,15 @@ export function Sidebar() {
         </div>
 
         <div className="fixed bottom-0 w-64 bg-white border-t border-gray-200 p-4">
+          <Link
+            href="https://GPTs4u.com/lifecoach"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center w-full px-4 py-3 mb-2 text-sm font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+          >
+            <MessageSquare className="h-5 w-5 mr-3" />
+            Let's talk!
+          </Link>
           <Button
             variant="ghost"
             className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"

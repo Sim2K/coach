@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Menu, LogOut, X } from "lucide-react";
+import { Menu, LogOut, X, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { menuItems } from "./sidebar";
 import { supabase } from "@/lib/supabase";
@@ -83,6 +83,15 @@ export function MobileMenu() {
           </div>
 
           <div className="border-t border-gray-200 p-4">
+            <Link
+              href="https://GPTs4u.com/lifecoach"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center w-full px-4 py-3 mb-2 rounded-lg text-purple-600 hover:bg-purple-50"
+            >
+              <MessageSquare className="h-5 w-5 mr-3" />
+              <span className="font-medium">Let's talk!</span>
+            </Link>
             <Button
               variant="ghost"
               className="w-full justify-start text-red-600 hover:bg-red-50"
