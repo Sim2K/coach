@@ -1,5 +1,4 @@
-import { headers } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getEnvironmentConfig } from '@/lib/config/environment';
 
@@ -11,13 +10,13 @@ const initStripe = () => {
     : process.env.STRIPE_TEST_SECRET_KEY!;
   
   return new Stripe(secretKey, {
-    apiVersion: '2023-10-16',
+    apiVersion: '2024-12-18.acacia',
   });
 };
 
-export async function POST(request: Request) {
-  const body = await request.text();
-  const signature = headers().get('stripe-signature');
+export async function POST(req: NextRequest) {
+  const rawBody = await req.text(); // Get the raw body directly
+  const signature = req.headers.get('stripe-signature');
   const config = getEnvironmentConfig();
 
   if (!signature) {
@@ -30,7 +29,7 @@ export async function POST(request: Request) {
   try {
     const stripe = initStripe();
     const event = stripe.webhooks.constructEvent(
-      body,
+      rawBody,
       signature,
       config.webhookSecret
     );
@@ -38,29 +37,28 @@ export async function POST(request: Request) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        
-        // Here you would typically:
-        // 1. Update user's subscription status
-        // 2. Send confirmation email
-        // 3. Update database records
-        // 4. Handle any other business logic
-
         console.log('Payment successful:', session.id);
         break;
       }
-
       case 'checkout.session.expired': {
-        const session = event.data.object as Stripe.Checkout.Session;
-        console.log('Session expired:', session.id);
+        console.log('Session expired:', event.data.object.id);
         break;
+      }
+      default: {
+        console.log(`Unhandled event type: ${event.type}`);
       }
     }
 
     return NextResponse.json({ received: true });
-  } catch (error: any) {
-    console.error('Webhook error:', error);
+  } catch (err) {
+    console.error('Webhook error:', {
+      error: err instanceof Error ? err.message : 'Unknown error',
+      signature: signature?.substring(0, 20) + '...',
+      webhookSecretLength: config.webhookSecret?.length || 0
+    });
+    
     return NextResponse.json(
-      { message: `Webhook Error: ${error.message}` },
+      { message: 'Webhook signature verification failed' },
       { status: 400 }
     );
   }
