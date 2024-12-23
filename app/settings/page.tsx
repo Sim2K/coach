@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { PasswordSection } from "@/components/settings/password-section/password-form";
 import { BillingSection } from "@/components/settings/billing-section/payment-form";
@@ -8,10 +9,32 @@ import { Lock, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "password";
+  const status = searchParams.get("status");
+  const sessionId = searchParams.get("session_id");
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Handle payment status on page load
+    if (status === "cancelled") {
+      toast({
+        variant: "destructive",
+        title: "Payment Cancelled",
+        description: "You have cancelled the payment process.",
+        duration: 5000,
+      });
+      // Clean up URL without triggering a refresh
+      window.history.replaceState({}, '', '/settings?tab=billing');
+    } else if (status === "success" && sessionId) {
+      // Let the BillingSection component handle the success case
+      // as it needs to verify the payment with Stripe
+      return;
+    }
+  }, [status, sessionId, toast]);
 
   const tabs = [
     { name: "Password", href: "/settings?tab=password", icon: Lock },
@@ -49,7 +72,7 @@ export default function SettingsPage() {
                     >
                       <tab.icon
                         className={cn(
-                          "mr-3 h-5 w-5",
+                          "mr-2 h-5 w-5",
                           isActive
                             ? "text-purple-500"
                             : "text-gray-400 group-hover:text-gray-500"
@@ -62,12 +85,13 @@ export default function SettingsPage() {
               </nav>
             </div>
 
-            <div className="mt-8">
-              {currentTab === "password" ? (
+            <div className="space-y-6">
+              {currentTab === "password" && (
                 <Card className="p-6 bg-white shadow-sm">
                   <PasswordSection />
                 </Card>
-              ) : (
+              )}
+              {currentTab === "billing" && (
                 <Card className="p-6 bg-white shadow-sm">
                   <BillingSection />
                 </Card>

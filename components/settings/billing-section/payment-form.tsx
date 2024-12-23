@@ -6,45 +6,176 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { Card } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
+import { getEnvironmentConfig } from "@/lib/config/environment";
+import { createCheckoutSession, redirectToCheckout } from "@/lib/stripe/client";
+import { StripeCurrency } from "@/types/stripe";
 
 const currencies = [
   { code: "USD", symbol: "$", minAmount: 5, rate: 1 },
   { code: "GBP", symbol: "£", minAmount: 5, rate: 0.79 },
-  { code: "EUR", symbol: "€", minAmount: 5, rate: 0.92 },
-  { code: "CAD", symbol: "$", minAmount: 6.80, rate: 1.36 },
-  { code: "AUD", symbol: "$", minAmount: 7.60, rate: 1.52 },
+  { code: "EUR", symbol: "€", minAmount: 6, rate: 0.92 },
+  { code: "CAD", symbol: "$", minAmount: 7, rate: 1.36 },
+  { code: "AUD", symbol: "$", minAmount: 8, rate: 1.52 },
 ];
 
 export function BillingSection() {
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState<StripeCurrency>("USD");
   const [amount, setAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [isLoading, setIsLoading] = useState(false);
   const [paymentType, setPaymentType] = useState("afford"); // "afford" or "worth"
+  const [lastPayment, setLastPayment] = useState<StripeSessionResponse | null>(null);
   const { toast } = useToast();
+  const config = getEnvironmentConfig();
 
   const selectedCurrency = currencies.find(c => c.code === currency);
   const usdEquivalent = amount ? parseFloat(amount) / selectedCurrency!.rate : 0;
 
+  // Check for returning from Stripe checkout
+  useEffect(() => {
+    const url = window.location.href;
+    const urlParams = new URL(url);
+    const sessionId = urlParams.searchParams.get('session_id');
+    const status = urlParams.searchParams.get('status');
+    
+    console.log('Payment return params:', { sessionId, status });
+
+    const handlePaymentReturn = async () => {
+      try {
+        setIsLoading(true);
+
+        if (status === 'cancelled') {
+          console.log('Payment was cancelled');
+          toast({
+            variant: "destructive",
+            title: "Payment Cancelled",
+            description: "You have cancelled the payment process.",
+            duration: 5000,
+          });
+          return;
+        }
+
+        if (sessionId && status === 'success') {
+          console.log('Checking payment status for session:', sessionId);
+          const response = await fetch(`/api/stripe/session-status?session_id=${sessionId}`);
+          
+          if (!response.ok) {
+            throw new Error('Failed to verify payment status');
+          }
+          
+          const data: StripeSessionResponse = await response.json();
+          console.log('Payment status data:', data);
+          
+          // Store the payment data
+          setLastPayment(data);
+          
+          if (data.isSuccess) {
+            const amount = parseFloat(data.metadata.originalAmount);
+            const formattedAmount = new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: data.metadata.currency
+            }).format(amount);
+
+            toast({
+              title: "Payment Successful!",
+              description: `Thank you for your ${formattedAmount} ${data.metadata.paymentType === 'worth' ? 'value-based' : 'accessibility-based'} payment.`,
+              duration: 5000,
+            });
+
+            // You might want to update UI or trigger other actions based on payment success
+            // For example, update subscription status, show receipt, etc.
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Payment Incomplete",
+              description: `Payment status: ${data.paymentStatus}. Please try again or contact support.`,
+              duration: 5000,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error handling payment return:', error);
+        toast({
+          variant: "destructive",
+          title: "Status Check Failed",
+          description: "Unable to verify payment status. Please contact support.",
+          duration: 5000,
+        });
+      } finally {
+        setIsLoading(false);
+        // Clean up URL without refreshing
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('session_id');
+        newUrl.searchParams.delete('status');
+        window.history.replaceState({}, '', newUrl.pathname + '?tab=billing');
+      }
+    };
+
+    if (status || sessionId) {
+      handlePaymentReturn();
+    }
+  }, [toast]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
 
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount < selectedCurrency?.minAmount!) {
+    try {
+      const numAmount = parseFloat(amount);
+      if (isNaN(numAmount) || numAmount < selectedCurrency?.minAmount!) {
+        throw new Error(`Minimum amount is ${selectedCurrency?.symbol}${selectedCurrency?.minAmount} for ${currency}`);
+      }
+
+      // Create checkout session
+      const session = await createCheckoutSession(currency, numAmount, paymentType as 'afford' | 'worth');
+      
+      // Redirect to Stripe Checkout
+      await redirectToCheckout(session);
+      
+    } catch (error: any) {
+      console.error('Payment form error:', error);
       toast({
         variant: "destructive",
-        title: "Invalid amount",
-        description: `Minimum amount is ${selectedCurrency?.symbol}${selectedCurrency?.minAmount} for ${currency}`
+        title: "Payment Error",
+        description: error.message || "Failed to process payment"
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    toast({
-      title: "Payment prepared",
-      description: `Ready to process ${selectedCurrency?.symbol}${amount} (≈ $${usdEquivalent.toFixed(2)}) payment.`
-    });
+  const renderLastPayment = () => {
+    if (!lastPayment) return null;
+
+    const amount = parseFloat(lastPayment.metadata.originalAmount);
+    const formattedAmount = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: lastPayment.metadata.currency
+    }).format(amount);
+
+    return (
+      <div className="mt-4 p-4 bg-green-50 rounded-md">
+        <h3 className="text-sm font-medium text-green-800">Last Payment Details</h3>
+        <dl className="mt-2 text-sm text-green-700">
+          <div className="flex justify-between">
+            <dt>Amount:</dt>
+            <dd>{formattedAmount}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt>Type:</dt>
+            <dd>{lastPayment.metadata.paymentType === 'worth' ? 'Value-based' : 'Accessibility-based'}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt>Status:</dt>
+            <dd>{lastPayment.paymentStatus}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt>Email:</dt>
+            <dd>{lastPayment.customerEmail}</dd>
+          </div>
+        </dl>
+      </div>
+    );
   };
 
   return (
@@ -66,7 +197,7 @@ export function BillingSection() {
           <div className="grid grid-cols-1 sm:grid-cols-[1.2fr_2fr_1.2fr] gap-8 items-start">
             <div>
               <Label htmlFor="currency">Currency</Label>
-              <Select value={currency} onValueChange={setCurrency}>
+              <Select value={currency} onValueChange={(value) => setCurrency(value as StripeCurrency)}>
                 <SelectTrigger id="currency" className="mt-2">
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
@@ -100,6 +231,11 @@ export function BillingSection() {
               <p className="text-sm text-gray-500 mt-2">
                 Minimum amount: {selectedCurrency?.symbol}{selectedCurrency?.minAmount}
               </p>
+              {amount && (
+                <p className="text-sm text-gray-500 mt-1">
+                  ≈ ${usdEquivalent.toFixed(2)} USD
+                </p>
+              )}
             </div>
 
             <div>
@@ -115,30 +251,18 @@ export function BillingSection() {
               </div>
             </div>
           </div>
-
-          <div className="space-y-2">
-            <Label>Payment Method</Label>
-            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="card" id="card" />
-                <Label htmlFor="card">Credit/Debit Card</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="paypal" id="paypal" />
-                <Label htmlFor="paypal">PayPal</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="bank" id="bank" />
-                <Label htmlFor="bank">Bank Transfer</Label>
-              </div>
-            </RadioGroup>
-          </div>
         </div>
 
-        <Button type="submit" className="w-full">
-          Process Payment
+        <Button 
+          type="submit" 
+          className="w-full"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Processing...' : config.buttonText}
         </Button>
       </form>
+
+      {renderLastPayment()}
     </div>
   );
 }
