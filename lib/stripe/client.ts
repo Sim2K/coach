@@ -1,5 +1,6 @@
 import { CreateSessionRequest, CheckoutSession } from '@/types/stripe';
 import { getEnvironmentConfig } from '../config/environment';
+import { supabase } from '@/lib/supabase';
 
 export const createCheckoutSession = async (
   currency: string,
@@ -7,12 +8,18 @@ export const createCheckoutSession = async (
   paymentType: 'afford' | 'worth'
 ): Promise<CheckoutSession> => {
   try {
+    const { data: { session: userSession } } = await supabase.auth.getSession();
+    if (!userSession) {
+      throw new Error('No active session');
+    }
+
     console.log('Creating checkout session:', { currency, amount, paymentType });
     
     const response = await fetch('/api/stripe/create-session', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-user-id': userSession.user.id
       },
       body: JSON.stringify({
         currency,

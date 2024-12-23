@@ -60,6 +60,7 @@ export async function POST(request: Request) {
         paymentType,
         originalAmount: amount.toString(),
         currency,
+        user_id: request.headers.get('x-user-id') || ''
       },
       success_url: `${request.headers.get('origin')}/settings?tab=billing&session_id={CHECKOUT_SESSION_ID}&status=success`,
       cancel_url: `${request.headers.get('origin')}/settings?tab=billing&status=cancelled`,

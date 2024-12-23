@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getEnvironmentConfig } from '@/lib/config/environment';
+import { supabase } from '@/lib/supabase';
 
 // Initialize Stripe with the appropriate secret key
 const initStripe = () => {
@@ -38,6 +39,27 @@ export async function POST(req: NextRequest) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log('Payment successful:', session.id);
+
+        // Insert payment record
+        const { error } = await supabase
+          .from("payments")
+          .insert([{
+            user_id: session.metadata?.user_id,
+            issuccess: true,
+            status: session.status,
+            paymentstatus: session.payment_status,
+            paymentintentstatus: 'succeeded',
+            customeremail: session.customer_details?.email || '',
+            amount: session.amount_total || 0,
+            currency: session.currency,
+            paymenttype: session.metadata?.paymentType?.toLowerCase() || '',
+            stripepaymentid: session.payment_intent
+          }]);
+
+        if (error) {
+          console.error('Error inserting payment record:', error);
+        }
+        
         break;
       }
       case 'checkout.session.expired': {
