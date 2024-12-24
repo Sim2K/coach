@@ -23,6 +23,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Goal } from "@/types/goal";
+import { SmartGoalDetails } from "./smart-goal-details";
 
 const getEffortLevelColor = (level: number) => {
   const colors = {
@@ -328,29 +329,9 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
         </div>
       </div>
 
-      <Card className={goal.is_completed ? "border-green-500 border-3" : ""}>
-        <CardContent className="p-6 relative">
-          {!goal.is_completed && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 text-green-500 hover:text-green-600"
-                    onClick={() => setShowCompletionDialog(true)}
-                    disabled={isLoading}
-                  >
-                    <CheckCircle2 className="h-6 w-6" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Complete this Goal!</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-
+      <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div className="p-6 relative">
+          {/* Existing Goal Details Content */}
           <div className="space-y-4">
             <div>
               <Label htmlFor="goal-description">Description</Label>
@@ -439,8 +420,14 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      <SmartGoalDetails 
+        goalId={goal.goal_id}
+        isEditing={isEditing}
+        onUpdate={onUpdate}
+      />
 
       <CompletionDialog
         open={showCompletionDialog}
