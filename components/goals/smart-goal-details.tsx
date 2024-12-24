@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import {
@@ -14,6 +14,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { SmartGoalDialog } from "./smart-goal-dialog";
 
 interface SmartGoal {
   smart_id: string;
@@ -46,6 +47,7 @@ export function SmartGoalDetails({ goalId, isEditing, onUpdate }: SmartGoalDetai
   const [smartGoal, setSmartGoal] = useState<SmartGoal | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [showDialog, setShowDialog] = useState(false);
 
   const fetchSmartGoal = async () => {
     try {
@@ -87,73 +89,126 @@ export function SmartGoalDetails({ goalId, isEditing, onUpdate }: SmartGoalDetai
     );
   }
 
-  if (!smartGoal) {
-    return (
-      <div className="mt-6 rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div className="p-6 relative">
-          <p className="text-gray-500 text-center">No SMART details available for this goal</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="mt-6 rounded-lg border bg-card text-card-foreground shadow-sm">
-      <div className="p-6 relative space-y-4">
+      <div className="p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pb-4 border-b">
           <h3 className="text-lg font-semibold">SMART Details</h3>
-          <Badge className={getStatusColor(smartGoal.status)}>
-            {smartGoal.status}
-          </Badge>
-        </div>
-
-        {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Progress</span>
-            <span>{smartGoal.smart_progress}%</span>
+          <div className="flex items-center gap-2">
+            {smartGoal && (
+              <Badge className={getStatusColor(smartGoal.status)}>
+                {smartGoal.status}
+              </Badge>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDialog(true)}
+            >
+              {smartGoal ? (
+                <>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit SMART
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add SMART
+                </>
+              )}
+            </Button>
           </div>
-          <Progress value={smartGoal.smart_progress} />
         </div>
 
-        {/* SMART Criteria */}
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="specific">
-            <AccordionTrigger>Specific</AccordionTrigger>
-            <AccordionContent>
-              {smartGoal.specific || "Not specified"}
-            </AccordionContent>
-          </AccordionItem>
+        {smartGoal ? (
+          <>
+            {/* Progress */}
+            <div className="space-y-2 pb-4 border-b">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Progress</span>
+                <span className="text-gray-600">{smartGoal.smart_progress}%</span>
+              </div>
+              <Progress 
+                value={smartGoal.smart_progress} 
+                className="bg-gray-100 h-2" 
+              />
+            </div>
 
-          <AccordionItem value="measurable">
-            <AccordionTrigger>Measurable</AccordionTrigger>
-            <AccordionContent>
-              {smartGoal.measurable || "Not specified"}
-            </AccordionContent>
-          </AccordionItem>
+            {/* SMART Criteria */}
+            <div className="divide-y">
+              <div className="py-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-1 bg-purple-600 rounded-full" />
+                  <h4 className="font-medium text-purple-900">Specific</h4>
+                </div>
+                <div className="pl-4 ml-3 border-l-2 border-purple-100 rounded">
+                  <p className="text-gray-600">
+                    {smartGoal.specific || "Not specified"}
+                  </p>
+                </div>
+              </div>
 
-          <AccordionItem value="achievable">
-            <AccordionTrigger>Achievable</AccordionTrigger>
-            <AccordionContent>
-              {smartGoal.achievable || "Not specified"}
-            </AccordionContent>
-          </AccordionItem>
+              <div className="py-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-1 bg-blue-600 rounded-full" />
+                  <h4 className="font-medium text-blue-900">Measurable</h4>
+                </div>
+                <div className="pl-4 ml-3 border-l-2 border-blue-100 rounded">
+                  <p className="text-gray-600">
+                    {smartGoal.measurable || "Not specified"}
+                  </p>
+                </div>
+              </div>
 
-          <AccordionItem value="relevant">
-            <AccordionTrigger>Relevant</AccordionTrigger>
-            <AccordionContent>
-              {smartGoal.relevant || "Not specified"}
-            </AccordionContent>
-          </AccordionItem>
+              <div className="py-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-1 bg-green-600 rounded-full" />
+                  <h4 className="font-medium text-green-900">Achievable</h4>
+                </div>
+                <div className="pl-4 ml-3 border-l-2 border-green-100 rounded">
+                  <p className="text-gray-600">
+                    {smartGoal.achievable || "Not specified"}
+                  </p>
+                </div>
+              </div>
 
-          <AccordionItem value="timeBound">
-            <AccordionTrigger>Time Bound</AccordionTrigger>
-            <AccordionContent>
-              {smartGoal.time_bound ? new Date(smartGoal.time_bound).toLocaleDateString() : "Not specified"}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+              <div className="py-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-1 bg-orange-600 rounded-full" />
+                  <h4 className="font-medium text-orange-900">Relevant</h4>
+                </div>
+                <div className="pl-4 ml-3 border-l-2 border-orange-100 rounded">
+                  <p className="text-gray-600">
+                    {smartGoal.relevant || "Not specified"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="py-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-1 bg-red-600 rounded-full" />
+                  <h4 className="font-medium text-red-900">Time-bound</h4>
+                </div>
+                <div className="pl-4 ml-3 border-l-2 border-red-100 rounded">
+                  <p className="text-gray-600">
+                    {smartGoal.time_bound ? new Date(smartGoal.time_bound).toLocaleDateString() : "Not specified"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <p className="text-gray-500 text-center py-8">No SMART details available for this goal</p>
+        )}
+
+        <SmartGoalDialog
+          open={showDialog}
+          onOpenChange={setShowDialog}
+          goalId={goalId}
+          smartGoal={smartGoal}
+          onSmartGoalChange={fetchSmartGoal}
+        />
       </div>
     </div>
   );
