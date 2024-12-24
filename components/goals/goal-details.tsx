@@ -223,20 +223,38 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
 
   return (
     <div className="space-y-6">
+      {/* Menu */}
+      <div className="hidden md:flex md:justify-between md:mt-4">
+        {onToggleMaximize && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleMaximize}
+          >
+            {isMaximized ? (
+              <Minimize2 className="h-5 w-5" />
+            ) : (
+              <Maximize2 className="h-5 w-5" />
+            )}
+          </Button>
+        )}
+      </div>
+
       {/* Back button row */}
       {onBack && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={onBack}
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
+        <div className="sticky top-16 left-0 z-40 bg-white -mt-4 -mx-4 px-4 pt-4 pb-2 block md:hidden border-b">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+        </div>
       )}
 
       {/* Title row */}
-      <div className="flex flex-col md:flex-row md:justify-between">
+      <div className="flex flex-col md:flex-row md:justify-between mt-4 md:mt-0">
         <h2 className="text-2xl font-bold text-gray-900">{goal.goal_description}</h2>
         
         {/* Actions - mobile view */}
@@ -280,19 +298,6 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
         <div className="hidden md:flex md:gap-2">
           {!isEditing ? (
             <>
-              {onToggleMaximize && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onToggleMaximize}
-                >
-                  {isMaximized ? (
-                    <Minimize2 className="h-5 w-5" />
-                  ) : (
-                    <Maximize2 className="h-5 w-5" />
-                  )}
-                </Button>
-              )}
               <Button
                 onClick={() => setIsEditing(true)}
               >

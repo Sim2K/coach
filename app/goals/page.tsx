@@ -78,7 +78,7 @@ export default function GoalsPage() {
           </div>
         )}
         
-        <div className={`${!showDetailsOnMobile ? 'hidden md:block' : 'block'} ${isMaximized ? 'w-full' : 'w-full md:w-2/3'} p-4 md:p-6`}>
+        <div className={`${!showDetailsOnMobile ? 'hidden' : 'block'} md:block w-full ${isMaximized ? 'w-full' : 'md:w-2/3'} p-4 md:p-6 bg-white`}>
           {selectedGoal ? (
             <GoalDetails 
               goal={selectedGoal} 
