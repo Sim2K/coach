@@ -122,34 +122,54 @@ export function SmartGoalDetails({ goalId, isEditing, onUpdate }: SmartGoalDetai
         </div>
 
         {smartGoal ? (
-          <>
-            {/* Progress */}
-            <div className="space-y-2 pb-4 border-b">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">Progress</span>
-                <span className="text-gray-600">{smartGoal.smart_progress}%</span>
+          <div className="space-y-6">
+            {/* Time-bound and Progress Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 pb-6 border-b-2">
+              {/* Time-bound - 25% */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-1 bg-red-600 rounded-full" />
+                  <h4 className="font-medium text-red-900">Time-bound</h4>
+                </div>
+                <div className="pl-4 ml-3 border-l-2 border-red-100 rounded">
+                  <p className="text-gray-600">
+                    {smartGoal.time_bound ? new Date(smartGoal.time_bound).toLocaleDateString() : "Not specified"}
+                  </p>
+                </div>
               </div>
-              <Progress 
-                value={smartGoal.smart_progress} 
-                className="bg-gray-100 h-2" 
-              />
-            </div>
 
-            {/* SMART Criteria */}
-            <div className="divide-y">
-              <div className="py-4 space-y-3">
+              {/* Progress - 75% */}
+              <div className="sm:col-span-3 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-1 bg-purple-600 rounded-full" />
-                  <h4 className="font-medium text-purple-900">Specific</h4>
+                  <h4 className="font-medium text-purple-900">Progress</h4>
                 </div>
-                <div className="pl-4 ml-3 border-l-2 border-purple-100 rounded">
+                <div className="pl-4 ml-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">{smartGoal.smart_progress}% Complete</span>
+                  </div>
+                  <Progress value={smartGoal.smart_progress} className="bg-gray-100 h-2" />
+                </div>
+              </div>
+            </div>
+
+            {/* Specific and Measurable Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Specific */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-1 bg-indigo-600 rounded-full" />
+                  <h4 className="font-medium text-indigo-900">Specific</h4>
+                </div>
+                <div className="pl-4 ml-3 border-l-2 border-indigo-100 rounded">
                   <p className="text-gray-600">
                     {smartGoal.specific || "Not specified"}
                   </p>
                 </div>
               </div>
 
-              <div className="py-4 space-y-3">
+              {/* Measurable */}
+              <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-1 bg-blue-600 rounded-full" />
                   <h4 className="font-medium text-blue-900">Measurable</h4>
@@ -160,8 +180,12 @@ export function SmartGoalDetails({ goalId, isEditing, onUpdate }: SmartGoalDetai
                   </p>
                 </div>
               </div>
+            </div>
 
-              <div className="py-4 space-y-3">
+            {/* Achievable and Relevant Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Achievable */}
+              <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-1 bg-green-600 rounded-full" />
                   <h4 className="font-medium text-green-900">Achievable</h4>
@@ -173,7 +197,8 @@ export function SmartGoalDetails({ goalId, isEditing, onUpdate }: SmartGoalDetai
                 </div>
               </div>
 
-              <div className="py-4 space-y-3">
+              {/* Relevant */}
+              <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-1 bg-orange-600 rounded-full" />
                   <h4 className="font-medium text-orange-900">Relevant</h4>
@@ -184,20 +209,8 @@ export function SmartGoalDetails({ goalId, isEditing, onUpdate }: SmartGoalDetai
                   </p>
                 </div>
               </div>
-
-              <div className="py-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-1 bg-red-600 rounded-full" />
-                  <h4 className="font-medium text-red-900">Time-bound</h4>
-                </div>
-                <div className="pl-4 ml-3 border-l-2 border-red-100 rounded">
-                  <p className="text-gray-600">
-                    {smartGoal.time_bound ? new Date(smartGoal.time_bound).toLocaleDateString() : "Not specified"}
-                  </p>
-                </div>
-              </div>
             </div>
-          </>
+          </div>
         ) : (
           <p className="text-gray-500 text-center py-8">No SMART details available for this goal</p>
         )}
