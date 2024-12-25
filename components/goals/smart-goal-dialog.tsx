@@ -28,7 +28,7 @@ interface SmartGoal {
   measurable: string | null;
   achievable: string | null;
   relevant: string | null;
-  time_bound: string | null;
+  time_bound?: string | null;
   smart_progress: number;
   status: 'Pending' | 'In Progress' | 'Completed' | 'On Hold';
 }
@@ -63,7 +63,6 @@ export function SmartGoalDialog({
     measurable: "",
     achievable: "",
     relevant: "",
-    time_bound: "",
     smart_progress: 0,
     status: "Pending" as const
   });
@@ -75,7 +74,6 @@ export function SmartGoalDialog({
         measurable: smartGoal.measurable || "",
         achievable: smartGoal.achievable || "",
         relevant: smartGoal.relevant || "",
-        time_bound: smartGoal.time_bound || "",
         smart_progress: smartGoal.smart_progress || 0,
         status: smartGoal.status
       });
@@ -85,7 +83,6 @@ export function SmartGoalDialog({
         measurable: "",
         achievable: "",
         relevant: "",
-        time_bound: "",
         smart_progress: 0,
         status: "Pending"
       });
@@ -210,19 +207,6 @@ export function SmartGoalDialog({
                   placeholder="Why is this important to your goals?"
                   required
                   className="min-h-[120px] resize-none"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Time-bound</Label>
-                <Input
-                  type="date"
-                  value={formData.time_bound}
-                  onChange={(e) =>
-                    setFormData({ ...formData, time_bound: e.target.value })
-                  }
-                  required
-                  className="h-10"
                 />
               </div>
 

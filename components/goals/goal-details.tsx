@@ -48,10 +48,10 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
   const [isEditing, setIsEditing] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [counts, setCounts] = useState({
-    milestones: 0,
-    updates: 0,
-    engagements: 0,
-    feedback: 0
+    milestones: goal.milestones?.[0]?.count ?? 0,
+    updates: goal.updates?.[0]?.count ?? 0,
+    engagements: goal.engagements?.[0]?.count ?? 0,
+    feedback: goal.feedback?.[0]?.count ?? 0
   });
   const [formData, setFormData] = useState({
     goal_description: goal.goal_description,
@@ -83,48 +83,13 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
   }, [goal]);
 
   useEffect(() => {
-    async function fetchCounts() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const [
-          milestonesData,
-          updatesData,
-          engagementsData,
-          feedbackData
-        ] = await Promise.all([
-          supabase
-            .from('milestones')
-            .select('*', { count: 'exact' })
-            .eq('goal_id', goal.goal_id),
-          supabase
-            .from('updates')
-            .select('*', { count: 'exact' })
-            .eq('goal_id', goal.goal_id),
-          supabase
-            .from('engagements')
-            .select('*', { count: 'exact' })
-            .eq('goal_id', goal.goal_id),
-          supabase
-            .from('feedback')
-            .select('*', { count: 'exact' })
-            .eq('goal_id', goal.goal_id)
-        ]);
-
-        setCounts({
-          milestones: milestonesData.count || 0,
-          updates: updatesData.count || 0,
-          engagements: engagementsData.count || 0,
-          feedback: feedbackData.count || 0
-        });
-      } catch (error) {
-        console.error('Error fetching counts:', error);
-      }
-    }
-
-    fetchCounts();
-  }, [goal.goal_id]);
+    setCounts({
+      milestones: goal.milestones?.[0]?.count ?? 0,
+      updates: goal.updates?.[0]?.count ?? 0,
+      engagements: goal.engagements?.[0]?.count ?? 0,
+      feedback: goal.feedback?.[0]?.count ?? 0
+    });
+  }, [goal]);
 
   const handleComplete = useCallback(async () => {
     setIsLoading(true);

@@ -22,7 +22,7 @@ interface SmartGoal {
   measurable: string | null;
   achievable: string | null;
   relevant: string | null;
-  time_bound: string | null;
+  time_bound?: string | null;
   smart_progress: number;
   status: 'Pending' | 'In Progress' | 'Completed' | 'On Hold';
 }
@@ -123,23 +123,9 @@ export function SmartGoalDetails({ goalId, isEditing, onUpdate }: SmartGoalDetai
 
         {smartGoal ? (
           <div className="space-y-6">
-            {/* Time-bound and Progress Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 pb-6 border-b-2">
-              {/* Time-bound - 25% */}
+            {/* Progress Row */}
+            <div className="grid grid-cols-1 gap-6 pb-6 border-b-2">
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-1 bg-red-600 rounded-full" />
-                  <h4 className="font-medium text-red-900">Time-bound</h4>
-                </div>
-                <div className="pl-4 ml-3 border-l-2 border-red-100 rounded">
-                  <p className="text-gray-600">
-                    {smartGoal.time_bound ? new Date(smartGoal.time_bound).toLocaleDateString() : "Not specified"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Progress - 75% */}
-              <div className="sm:col-span-3 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-1 bg-purple-600 rounded-full" />
                   <h4 className="font-medium text-purple-900">Progress</h4>

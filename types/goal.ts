@@ -5,6 +5,9 @@ export type Goal = {
   goal_type?: string;
   target_date?: string;
   milestones?: { count: number }[];
+  updates?: { count: number }[];
+  engagements?: { count: number }[];
+  feedback?: { count: number }[];
   count?: number;
   progress: number;
   effort_level: number;

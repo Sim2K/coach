@@ -35,4 +35,4 @@ yarn-error.log*
 next-env.d.ts
 
 #App info details
-#appInfo.md
+appInfo.md

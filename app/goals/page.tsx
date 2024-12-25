@@ -30,7 +30,10 @@ export default function GoalsPage() {
         .from("goals")
         .select(`
           *,
-          milestones:milestones(count)
+          milestones:milestones(count),
+          updates:updates(count),
+          engagements:engagement(count),
+          feedback:feedback(count)
         `)
         .eq("user_id", session.user.id);
 
