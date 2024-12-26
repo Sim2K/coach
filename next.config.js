@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -11,6 +10,16 @@ const nextConfig = {
       use: ['@svgr/webpack'],
     });
     return config;
+  },
+  // Enable proper routing and auth handling
+  reactStrictMode: true,
+  poweredByHeader: false,
+  swcMinify: true,
+  compiler: {
+    removeConsole: false,
+  },
+  experimental: {
+    serverActions: true,
   },
 };
 

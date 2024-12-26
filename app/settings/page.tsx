@@ -1,6 +1,6 @@
 "use client";
 
-import { SettingsLayout } from "./layout";
+import SettingsLayout from "./layout";
 
 export default function SettingsPage() {
   return <SettingsLayout>

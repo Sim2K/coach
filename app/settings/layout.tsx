@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { Card } from "@/components/ui/card";
 import { PasswordSection } from "@/components/settings/password-section/password-form";
 import { BillingSection } from "@/components/settings/billing-section/payment-form";
@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 
-export default function SettingsLayout({ children }: { children: React.ReactNode }) {
+function SettingsContent() {
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "password";
   const status = searchParams.get("status");
@@ -52,57 +52,76 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             </p>
           </div>
 
-          <div className="mt-6 space-y-8">
-            <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-8">
-                {tabs.map((tab) => {
-                  const isActive = currentTab === tab.name.toLowerCase();
-                  return (
-                    <Link
-                      key={tab.name}
-                      href={tab.href}
-                      className={cn(
-                        "group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm",
-                        isActive
-                          ? "border-purple-500 text-purple-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      )}
-                    >
-                      <tab.icon
+          <div className="mt-6">
+            <div className="sm:hidden">
+              <label htmlFor="tabs" className="sr-only">
+                Select a tab
+              </label>
+              <select
+                id="tabs"
+                name="tabs"
+                className="block w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                defaultValue={currentTab}
+                onChange={(e) => window.location.href = `/settings?tab=${e.target.value}`}
+              >
+                {tabs.map((tab) => (
+                  <option key={tab.name} value={tab.name.toLowerCase()}>
+                    {tab.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="hidden sm:block">
+              <div className="border-b border-gray-200">
+                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = tab.href.includes(currentTab);
+                    return (
+                      <Link
+                        key={tab.name}
+                        href={tab.href}
                         className={cn(
-                          "mr-2 h-5 w-5",
                           isActive
-                            ? "text-purple-500"
-                            : "text-gray-400 group-hover:text-gray-500"
+                            ? "border-indigo-500 text-indigo-600"
+                            : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700",
+                          "group inline-flex items-center border-b-2 py-4 px-1 text-sm font-medium"
                         )}
-                      />
-                      {tab.name}
-                    </Link>
-                  );
-                })}
-              </nav>
+                      >
+                        <Icon
+                          className={cn(
+                            isActive ? "text-indigo-500" : "text-gray-400 group-hover:text-gray-500",
+                            "-ml-0.5 mr-2 h-5 w-5"
+                          )}
+                          aria-hidden="true"
+                        />
+                        <span>{tab.name}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
             </div>
+          </div>
 
-            <div className="space-y-6">
-              {currentTab === "password" && (
-                <Card className="p-6 bg-white shadow-sm">
-                  <PasswordSection />
-                </Card>
-              )}
-              {currentTab === "billing" && (
-                <Card className="p-6 bg-white shadow-sm">
-                  <BillingSection />
-                </Card>
-              )}
-              {currentTab === "payments" && (
-                <Card className="p-6 bg-white shadow-sm">
-                  <PaymentsSection />
-                </Card>
-              )}
-            </div>
+          <div className="mt-8">
+            <Card className="p-6">
+              {currentTab === "password" && <PasswordSection />}
+              {currentTab === "billing" && <BillingSection />}
+              {currentTab === "payments" && <PaymentsSection />}
+            </Card>
           </div>
         </div>
       </main>
     </div>
+  );
+}
+
+export default function SettingsLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SettingsContent />
+      {children}
+    </Suspense>
   );
 }

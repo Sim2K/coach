@@ -1,8 +1,8 @@
 export type StripeCurrency = 'USD' | 'GBP' | 'EUR' | 'CAD' | 'AUD';
 
-export interface PriceIds {
-  [key in StripeCurrency]: string;
-}
+export type PriceIds = {
+  [K in StripeCurrency]: string;
+};
 
 export interface EnvironmentConfig {
   publicKey: string;
@@ -30,6 +30,7 @@ export type StripeSessionMetadata = {
 };
 
 export type StripeSessionResponse = {
+  success: boolean;
   isSuccess: boolean;
   status: 'complete' | 'expired' | 'open';
   paymentStatus: 'paid' | 'unpaid' | 'no_payment_required';
@@ -40,8 +41,8 @@ export type StripeSessionResponse = {
   metadata: StripeSessionMetadata;
 };
 
-export type CreateSessionRequest = {
-  currency: string;
+export interface CreateSessionRequest {
+  currency: StripeCurrency;
   amount: number;
   paymentType: 'afford' | 'worth';
-};
+}

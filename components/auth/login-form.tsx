@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+
 const formSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address.",
@@ -41,6 +42,7 @@ export function LoginForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsLoading(true);
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
@@ -51,10 +53,19 @@ export function LoginForm() {
         return;
       }
 
+      if (!data?.session) {
+        toast.error("Failed to establish session. Please try again.");
+        return;
+      }
+
       toast.success("Successfully logged in!");
-      router.push("/profile");
-    } catch (error) {
-      toast.error("An error occurred while logging in.");
+      
+      // Force a reload to ensure middleware picks up the new session
+      router.refresh();
+      router.push('/profile');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast.error(error.message || "An error occurred while logging in.");
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +84,7 @@ export function LoginForm() {
                 <Input
                   placeholder="name@example.com"
                   type="email"
+                  autoComplete="email"
                   {...field}
                 />
               </FormControl>
@@ -90,6 +102,7 @@ export function LoginForm() {
                 <Input
                   placeholder="••••••••"
                   type="password"
+                  autoComplete="current-password"
                   {...field}
                 />
               </FormControl>
@@ -100,9 +113,6 @@ export function LoginForm() {
         <Button className="w-full mb-2" type="submit" disabled={isLoading}>
           {isLoading ? "Logging in..." : "Log In"}
         </Button>
-        <p className="text-sm text-gray-600">
-          New here? Create an account now and start your coaching journey!
-        </p>
       </form>
     </Form>
   );

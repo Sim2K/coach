@@ -2,22 +2,26 @@ import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export async function middleware(req: NextRequest) {
+export async function middleware(request: NextRequest) {
   const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
+  const supabase = createMiddlewareClient({ req: request, res });
 
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // If user is not signed in and the current path is not / or /login, redirect to /login
-  if (!session && !['/login', '/'].includes(req.nextUrl.pathname)) {
-    return NextResponse.redirect(new URL('/login', req.url));
+  // Auth routes that don't require authentication
+  const publicRoutes = ['/auth/login', '/'];
+  const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname);
+
+  // If user is not signed in and the current path is not public, redirect to login
+  if (!session && !isPublicRoute) {
+    return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // If user is signed in and the current path is / or /login, redirect to /profile
-  if (session && ['/login', '/'].includes(req.nextUrl.pathname)) {
-    return NextResponse.redirect(new URL('/profile', req.url));
+  // If user is signed in and trying to access public routes, redirect to profile
+  if (session && isPublicRoute) {
+    return NextResponse.redirect(new URL('/profile', request.url));
   }
 
   return res;
@@ -26,11 +30,12 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
+     * Match all request paths except for:
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - public files (public/*)
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

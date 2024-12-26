@@ -6,15 +6,13 @@ import { CreateSessionRequest } from '@/types/stripe';
 // Initialize Stripe with the appropriate secret key
 const initStripe = () => {
   const config = getEnvironmentConfig();
-  const secretKey = process.env.NODE_ENV === 'production'
-    ? process.env.STRIPE_SECRET_KEY!
-    : process.env.STRIPE_TEST_SECRET_KEY!;
+  const secretKey = process.env.STRIPE_SECRET_KEY!;
   
   console.log('Using environment:', process.env.NODE_ENV);
   console.log('Using secret key:', secretKey.substring(0, 8) + '...');
   
   return new Stripe(secretKey, {
-    apiVersion: '2023-10-16',
+    apiVersion: '2024-12-18.acacia',
   });
 };
 
@@ -45,40 +43,24 @@ export async function POST(request: Request) {
       billing_address_collection: 'auto',
       line_items: [
         {
-          price_data: {
-            currency: currency.toLowerCase(),
-            product_data: {
-              name: 'AI Coaching Subscription',
-              description: `${paymentType === 'worth' ? 'Value-based' : 'Accessibility-based'} payment`,
-            },
-            unit_amount: Math.round(amount * 100), // Convert to cents
-          },
+          price: priceId,
           quantity: 1,
         },
       ],
       metadata: {
-        paymentType,
-        originalAmount: amount.toString(),
         currency,
-        user_id: request.headers.get('x-user-id') || ''
+        originalAmount: amount.toString(),
+        paymentType,
       },
-      success_url: `${request.headers.get('origin')}/settings?tab=billing&session_id={CHECKOUT_SESSION_ID}&status=success`,
-      cancel_url: `${request.headers.get('origin')}/settings?tab=billing&status=cancelled`,
+      success_url: `${config.returnUrl}/settings?status=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${config.returnUrl}/settings?status=cancelled`,
     });
 
-    console.log('Created session:', { 
-      id: session.id,
-      url: session.url,
-    });
-
-    return NextResponse.json({
-      id: session.id,
-      url: session.url,
-    });
-  } catch (error: any) {
-    console.error('Error creating checkout session:', error);
+    return NextResponse.json({ id: session.id, url: session.url });
+  } catch (error) {
+    console.error('Error creating session:', error);
     return NextResponse.json(
-      { message: error.message || 'Failed to create checkout session' },
+      { message: 'Error creating checkout session' },
       { status: 500 }
     );
   }

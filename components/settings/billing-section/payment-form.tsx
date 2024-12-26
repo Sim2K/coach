@@ -9,14 +9,14 @@ import { useToast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { getEnvironmentConfig } from "@/lib/config/environment";
 import { createCheckoutSession, redirectToCheckout } from "@/lib/stripe/client";
-import { StripeCurrency } from "@/types/stripe";
+import { StripeCurrency, StripeSessionResponse } from "@/types/stripe";
 
 const currencies = [
   { code: "USD", symbol: "$", minAmount: 5, rate: 1 },
   { code: "GBP", symbol: "£", minAmount: 5, rate: 0.79 },
   { code: "EUR", symbol: "€", minAmount: 6, rate: 0.92 },
   { code: "CAD", symbol: "$", minAmount: 7, rate: 1.36 },
-  { code: "AUD", symbol: "$", minAmount: 8, rate: 1.52 },
+  { code: "AUD", symbol: "$", minAmount: 8, rate: 1.52 }
 ];
 
 export function BillingSection() {

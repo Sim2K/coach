@@ -64,7 +64,7 @@ export function SmartGoalDialog({
     achievable: "",
     relevant: "",
     smart_progress: 0,
-    status: "Pending" as const
+    status: "Pending" as SmartGoal['status']
   });
 
   useEffect(() => {
