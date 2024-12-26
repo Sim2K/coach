@@ -41,10 +41,12 @@ function SettingsContent() {
     { name: "Payments", href: "/settings?tab=payments", icon: Receipt },
   ];
 
+  const shouldShowSheet = tabs.length > 4;
+
   return (
     <div className={cn(
       "flex min-h-screen bg-gray-50",
-      "flex-col sm:flex-row" // Stack on mobile, side-by-side on desktop
+      "flex-col sm:flex-row"
     )}>
       <Sidebar />
       
@@ -58,44 +60,76 @@ function SettingsContent() {
           </div>
 
           <div className="mt-6">
-            <div className="sm:hidden">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" className="w-full flex justify-between items-center">
-                    <span>{tabs.find(tab => tab.href.includes(currentTab))?.name || 'Settings'}</span>
-                    <Menu className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="top" className="w-full pt-16">
-                  <nav className="flex flex-col space-y-4">
-                    {tabs.map((tab) => {
-                      const Icon = tab.icon;
-                      const isActive = tab.href.includes(currentTab);
-                      return (
-                        <Link
-                          key={tab.name}
-                          href={tab.href}
-                          className={cn(
-                            "flex items-center px-4 py-2 rounded-md",
-                            isActive
-                              ? "bg-indigo-50 text-indigo-600"
-                              : "text-gray-600 hover:bg-gray-50"
-                          )}
-                        >
-                          <Icon
+            {shouldShowSheet ? (
+              <div className="sm:hidden">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" className="w-full flex justify-between items-center">
+                      <span>{tabs.find(tab => tab.href.includes(currentTab))?.name || 'Settings'}</span>
+                      <Menu className="h-4 w-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="top" className="w-full pt-16">
+                    <nav className="flex flex-col space-y-4">
+                      {tabs.map((tab) => {
+                        const Icon = tab.icon;
+                        const isActive = tab.href.includes(currentTab);
+                        return (
+                          <Link
+                            key={tab.name}
+                            href={tab.href}
                             className={cn(
-                              "mr-3 h-5 w-5",
-                              isActive ? "text-indigo-500" : "text-gray-400"
+                              "flex items-center px-4 py-2 rounded-md",
+                              isActive
+                                ? "bg-indigo-50 text-indigo-600"
+                                : "text-gray-600 hover:bg-gray-50"
                             )}
-                          />
-                          {tab.name}
-                        </Link>
-                      );
-                    })}
-                  </nav>
-                </SheetContent>
-              </Sheet>
-            </div>
+                          >
+                            <Icon
+                              className={cn(
+                                "mr-3 h-5 w-5",
+                                isActive ? "text-indigo-500" : "text-gray-400"
+                              )}
+                            />
+                            {tab.name}
+                          </Link>
+                        );
+                      })}
+                    </nav>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            ) : (
+              <div className="border-b border-gray-200">
+                <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = tab.href.includes(currentTab);
+                    return (
+                      <Link
+                        key={tab.name}
+                        href={tab.href}
+                        className={cn(
+                          isActive
+                            ? "border-indigo-500 text-indigo-600"
+                            : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700",
+                          "group inline-flex items-center border-b-2 py-2 px-1 text-sm font-medium flex-1 justify-center"
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            isActive ? "text-indigo-500" : "text-gray-400 group-hover:text-gray-500",
+                            "h-4 w-4 mr-2"
+                          )}
+                          aria-hidden="true"
+                        />
+                        <span>{tab.name}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
+            )}
             <div className="hidden sm:block">
               <div className="border-b border-gray-200">
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">
