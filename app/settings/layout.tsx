@@ -6,11 +6,13 @@ import { PasswordSection } from "@/components/settings/password-section/password
 import { BillingSection } from "@/components/settings/billing-section/payment-form";
 import { PaymentsSection } from "@/components/settings/payments-section";
 import { Sidebar } from "@/components/sidebar";
-import { Lock, CreditCard, Receipt } from "lucide-react";
+import { Lock, CreditCard, Receipt, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 function SettingsContent() {
   const searchParams = useSearchParams();
@@ -40,7 +42,10 @@ function SettingsContent() {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className={cn(
+      "flex min-h-screen bg-gray-50",
+      "flex-col sm:flex-row" // Stack on mobile, side-by-side on desktop
+    )}>
       <Sidebar />
       
       <main className="flex-1 overflow-y-auto">
@@ -54,22 +59,42 @@ function SettingsContent() {
 
           <div className="mt-6">
             <div className="sm:hidden">
-              <label htmlFor="tabs" className="sr-only">
-                Select a tab
-              </label>
-              <select
-                id="tabs"
-                name="tabs"
-                className="block w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                defaultValue={currentTab}
-                onChange={(e) => window.location.href = `/settings?tab=${e.target.value}`}
-              >
-                {tabs.map((tab) => (
-                  <option key={tab.name} value={tab.name.toLowerCase()}>
-                    {tab.name}
-                  </option>
-                ))}
-              </select>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="w-full flex justify-between items-center">
+                    <span>{tabs.find(tab => tab.href.includes(currentTab))?.name || 'Settings'}</span>
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="top" className="w-full pt-16">
+                  <nav className="flex flex-col space-y-4">
+                    {tabs.map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = tab.href.includes(currentTab);
+                      return (
+                        <Link
+                          key={tab.name}
+                          href={tab.href}
+                          className={cn(
+                            "flex items-center px-4 py-2 rounded-md",
+                            isActive
+                              ? "bg-indigo-50 text-indigo-600"
+                              : "text-gray-600 hover:bg-gray-50"
+                          )}
+                        >
+                          <Icon
+                            className={cn(
+                              "mr-3 h-5 w-5",
+                              isActive ? "text-indigo-500" : "text-gray-400"
+                            )}
+                          />
+                          {tab.name}
+                        </Link>
+                      );
+                    })}
+                  </nav>
+                </SheetContent>
+              </Sheet>
             </div>
             <div className="hidden sm:block">
               <div className="border-b border-gray-200">
@@ -105,7 +130,10 @@ function SettingsContent() {
           </div>
 
           <div className="mt-8">
-            <Card className="p-6">
+            <Card className={cn(
+              "p-6",
+              "max-w-full overflow-x-hidden"
+            )}>
               {currentTab === "password" && <PasswordSection />}
               {currentTab === "billing" && <BillingSection />}
               {currentTab === "payments" && <PaymentsSection />}
@@ -121,7 +149,6 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <SettingsContent />
-      {children}
     </Suspense>
   );
 }
