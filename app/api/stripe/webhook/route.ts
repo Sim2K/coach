@@ -73,6 +73,17 @@ export async function POST(req: NextRequest) {
           );
         }
 
+        if (!session.metadata?.user_id) {
+          console.error('Missing required user_id in session metadata');
+          return NextResponse.json(
+            { 
+              message: 'Missing required user_id in session metadata',
+              error: 'missing_user_id'
+            },
+            { status: 400 }
+          );
+        }
+
         // Add payment record to database with exact schema match
         const paymentData = {
           user_id: session.metadata.user_id,
@@ -80,10 +91,10 @@ export async function POST(req: NextRequest) {
           status: 'completed',
           paymentstatus: session.payment_status || 'paid',
           paymentintentstatus: session.payment_status || 'succeeded',
-          customeremail: session.customer_details.email,
-          amount: session.amount_total,
-          currency: session.currency.toUpperCase(),
-          paymenttype: session.metadata.paymentType || 'worth',
+          customeremail: session.customer_details?.email || '',
+          amount: session.amount_total || 0,
+          currency: (session.currency || 'usd').toUpperCase(),
+          paymenttype: session.metadata?.paymentType || 'worth',
           timepaid: new Date().toISOString(),
           stripepaymentid: typeof session.payment_intent === 'string' ? session.payment_intent : null
         };

@@ -11,6 +11,7 @@ import { CompletionDialog } from "@/components/ui/completion-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Milestone } from "@/types/milestone";
+import { cn } from "@/lib/utils";
 
 export function MilestonesList({ goalId }: { goalId: string }) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
@@ -32,7 +33,7 @@ export function MilestonesList({ goalId }: { goalId: string }) {
         .from("milestones")
         .select("*")
         .eq("goal_id", goalId)
-        .order("created_at", { ascending: false });
+        .order("target_date", { ascending: true });
 
       if (error) throw error;
       setMilestones(data);
@@ -74,6 +75,7 @@ export function MilestonesList({ goalId }: { goalId: string }) {
 
       if (error) throw error;
       fetchMilestones();
+      setShowCompletionDialog(false); // Close the dialog after success
       toast.success("Milestone completed!");
     } catch (error: any) {
       toast.error(error.message || "Error completing milestone");
@@ -124,7 +126,30 @@ export function MilestonesList({ goalId }: { goalId: string }) {
             {milestones.map((milestone) => (
               <div
                 key={milestone.milestone_id}
-                className="p-4 md:p-6 border rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-200"
+                className={(() => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const targetDate = new Date(milestone.target_date);
+                  targetDate.setHours(0, 0, 0, 0);
+                  const diffTime = targetDate.getTime() - today.getTime();
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                  let bgColor = "bg-white";
+                  if (!milestone.achieved) {
+                    if (diffDays > 0 && diffDays <= 10) {
+                      bgColor = "bg-orange-200";
+                    } else if (diffDays <= 0) {
+                      bgColor = "bg-red-200";
+                    }
+                  }
+
+                  const finalClassName = cn(
+                    "p-4 md:p-6 border rounded-xl shadow-sm hover:shadow-md transition-all duration-200",
+                    bgColor
+                  );
+
+                  return finalClassName;
+                })()}
               >
                 <div className="flex flex-col md:flex-row justify-between items-start gap-3 mb-3">
                   <div className="flex items-start md:items-center space-x-2 w-full md:w-auto">
