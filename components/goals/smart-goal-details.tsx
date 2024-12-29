@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { ChevronDown, ChevronUp, Plus, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -23,7 +22,6 @@ interface SmartGoal {
   achievable: string | null;
   relevant: string | null;
   time_bound?: string | null;
-  smart_progress: number;
   status: 'Pending' | 'In Progress' | 'Completed' | 'On Hold';
 }
 
@@ -123,22 +121,6 @@ export function SmartGoalDetails({ goalId, isEditing, onUpdate }: SmartGoalDetai
 
         {smartGoal ? (
           <div className="space-y-6">
-            {/* Progress Row */}
-            <div className="grid grid-cols-1 gap-6 pb-6 border-b-2">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-1 bg-purple-600 rounded-full" />
-                  <h4 className="font-medium text-purple-900">Progress</h4>
-                </div>
-                <div className="pl-4 ml-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">{smartGoal.smart_progress}% Complete</span>
-                  </div>
-                  <Progress value={smartGoal.smart_progress} className="bg-gray-100 h-2" />
-                </div>
-              </div>
-            </div>
-
             {/* Specific and Measurable Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* Specific */}

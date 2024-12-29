@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getEnvironmentConfig } from '@/lib/config/environment';
 import { CreateSessionRequest } from '@/types/stripe';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 // Initialize Stripe with the appropriate secret key
 const initStripe = () => {
@@ -21,8 +23,22 @@ export async function POST(request: Request) {
     const { currency, amount, paymentType }: CreateSessionRequest = await request.json();
     console.log('Received request:', { currency, amount, paymentType });
 
+    // Get the authenticated user
+    const supabase = createServerComponentClient({ cookies });
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user?.id) {
+      return NextResponse.json(
+        { message: 'User not authenticated' },
+        { status: 401 }
+      );
+    }
+
     const config = getEnvironmentConfig();
     const stripe = initStripe();
+
+    // Get the origin from the request headers or use the config default
+    const origin = request.headers.get('origin') || config.returnUrl;
 
     // Get the appropriate price ID for the currency
     const priceId = config.priceIds[currency];
@@ -51,9 +67,10 @@ export async function POST(request: Request) {
         currency,
         originalAmount: amount.toString(),
         paymentType,
+        user_id: user.id
       },
-      success_url: `${config.returnUrl}/settings?status=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${config.returnUrl}/settings?status=cancelled`,
+      success_url: `${origin}/settings?tab=billing&status=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/settings?tab=billing&status=cancelled`,
     });
 
     return NextResponse.json({ id: session.id, url: session.url });

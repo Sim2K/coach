@@ -100,7 +100,7 @@ function SettingsContent() {
                 </Sheet>
               </div>
             ) : (
-              <div className="border-b border-gray-200">
+              <div className="sm:hidden border-b border-gray-200">
                 <nav className="-mb-px flex space-x-4" aria-label="Tabs">
                   {tabs.map((tab) => {
                     const Icon = tab.icon;

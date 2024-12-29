@@ -29,7 +29,6 @@ interface SmartGoal {
   achievable: string | null;
   relevant: string | null;
   time_bound?: string | null;
-  smart_progress: number;
   status: 'Pending' | 'In Progress' | 'Completed' | 'On Hold';
 }
 
@@ -63,7 +62,6 @@ export function SmartGoalDialog({
     measurable: "",
     achievable: "",
     relevant: "",
-    smart_progress: 0,
     status: "Pending" as SmartGoal['status']
   });
 
@@ -74,7 +72,6 @@ export function SmartGoalDialog({
         measurable: smartGoal.measurable || "",
         achievable: smartGoal.achievable || "",
         relevant: smartGoal.relevant || "",
-        smart_progress: smartGoal.smart_progress || 0,
         status: smartGoal.status
       });
     } else {
@@ -83,7 +80,6 @@ export function SmartGoalDialog({
         measurable: "",
         achievable: "",
         relevant: "",
-        smart_progress: 0,
         status: "Pending"
       });
     }
@@ -210,40 +206,25 @@ export function SmartGoalDialog({
                 />
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Progress ({formData.smart_progress}%)</Label>
-                  <Slider
-                    value={[formData.smart_progress]}
-                    onValueChange={([value]) =>
-                      setFormData({ ...formData, smart_progress: value })
-                    }
-                    max={100}
-                    step={1}
-                    className="py-2"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value: 'Pending' | 'In Progress' | 'Completed' | 'On Hold') =>
-                      setFormData({ ...formData, status: value })
-                    }
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value: 'Pending' | 'In Progress' | 'Completed' | 'On Hold') =>
+                    setFormData({ ...formData, status: value })
+                  }
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

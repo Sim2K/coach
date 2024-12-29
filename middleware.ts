@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getSession();
 
   // Auth routes that don't require authentication
-  const publicRoutes = ['/auth/login', '/'];
+  const publicRoutes = ['/auth/login', '/', '/api/stripe/webhook'];
   const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname);
 
   // If user is not signed in and the current path is not public, redirect to login
