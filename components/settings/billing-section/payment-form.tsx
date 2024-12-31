@@ -7,12 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { getEnvironmentConfig } from "@/lib/config/environment";
 import { createCheckoutSession, redirectToCheckout } from "@/lib/stripe/client";
 import { StripeCurrency, StripeSessionResponse } from "@/types/stripe";
+import { supabase } from "@/lib/supabase";
 
 const currencies = [
-  { code: "USD", symbol: "$", minAmount: 5, rate: 1 },
+  { code: "USD", symbol: "$", minAmount: 5, rate: 1 },/*  */
   { code: "GBP", symbol: "£", minAmount: 5, rate: 0.79 },
   { code: "EUR", symbol: "€", minAmount: 6, rate: 0.92 },
   { code: "CAD", symbol: "$", minAmount: 7, rate: 1.36 },
@@ -25,11 +27,59 @@ export function BillingSection() {
   const [isLoading, setIsLoading] = useState(false);
   const [paymentType, setPaymentType] = useState("afford"); // "afford" or "worth"
   const [lastPayment, setLastPayment] = useState<StripeSessionResponse | null>(null);
+  const [selectedMonths, setSelectedMonths] = useState(1);
+  const [currentSubsEndDate, setCurrentSubsEndDate] = useState<string | null>(null);
   const { toast } = useToast();
   const config = getEnvironmentConfig();
 
   const selectedCurrency = currencies.find(c => c.code === currency);
   const usdEquivalent = amount ? parseFloat(amount) / selectedCurrency!.rate : 0;
+
+  // Fetch current subscription end date from latest payment
+  useEffect(() => {
+    const fetchLatestPayment = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        const { data, error } = await supabase
+          .from('payments')
+          .select('subsenddate')
+          .eq('user_id', session.user.id)
+          .order('timepaid', { ascending: false })
+          .limit(1)
+          .single();
+
+        const now = new Date().toISOString().split('T')[0];
+        
+        if (!error && data && data.subsenddate) {
+          // Use payment date if it's in the future, otherwise use current date
+          if (data.subsenddate > now) {
+            setCurrentSubsEndDate(data.subsenddate);
+          } else {
+            setCurrentSubsEndDate(now);
+          }
+        } else {
+          setCurrentSubsEndDate(now);
+        }
+      }
+    };
+    fetchLatestPayment();
+  }, []);
+
+  // Calculate new subscription end date
+  const calculateSubsEndDate = () => {
+    const baseDate = currentSubsEndDate ? new Date(currentSubsEndDate) : new Date();
+    const newDate = new Date(baseDate);
+    newDate.setMonth(newDate.getMonth() + selectedMonths);
+    return newDate;
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('en-GB', { 
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    }).format(date);
+  };
 
   // Check for returning from Stripe checkout
   useEffect(() => {
@@ -126,12 +176,24 @@ export function BillingSection() {
         throw new Error(`Minimum amount is ${selectedCurrency?.symbol}${selectedCurrency?.minAmount} for ${currency}`);
       }
 
+      const totalAmount = numAmount * selectedMonths;
+      const subsEndDate = calculateSubsEndDate();
+
+      console.log('Calculated subscription end date:', subsEndDate.toISOString().split('T')[0]);
+
       // Create checkout session
-      const session = await createCheckoutSession(currency, numAmount, paymentType as 'afford' | 'worth');
-      
+      const session = await createCheckoutSession(
+        currency,
+        totalAmount,
+        paymentType as 'afford' | 'worth',
+        {
+          subscriptionEndDate: subsEndDate.toISOString().split('T')[0],
+          MonthsCount: selectedMonths.toString()
+        }
+      );
+
       // Redirect to Stripe Checkout
       await redirectToCheckout(session);
-      
     } catch (error: any) {
       console.error('Payment form error:', error);
       toast({
@@ -212,7 +274,7 @@ export function BillingSection() {
             </div>
 
             <div>
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">Amount per month</Label>
               <div className="relative mt-2">
                 <span className="absolute left-3 top-2.5 text-gray-500">
                   {selectedCurrency?.symbol}
@@ -229,7 +291,7 @@ export function BillingSection() {
                 />
               </div>
               <p className="text-sm text-gray-500 mt-2">
-                Minimum amount: {selectedCurrency?.symbol}{selectedCurrency?.minAmount}
+                Minimum monthly amount: {selectedCurrency?.symbol}{selectedCurrency?.minAmount}
               </p>
               {amount && (
                 <p className="text-sm text-gray-500 mt-1">
@@ -249,6 +311,39 @@ export function BillingSection() {
                 />
                 <span className={`text-sm ${paymentType === 'worth' ? 'text-purple-600' : 'text-gray-500'}`}>Worth</span>
               </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-4">
+            <div className="flex items-center justify-between">
+              <Label>Select Payment Period (1-3 months)</Label>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600">
+                  Total: {selectedCurrency?.symbol}{(parseFloat(amount || "0") * selectedMonths).toFixed(2)}
+                </span>
+                <span className="text-sm text-gray-600">
+                  Valid until: {formatDate(calculateSubsEndDate())}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <p className="text-sm text-gray-500 whitespace-nowrap">
+                {selectedMonths} {selectedMonths === 1 ? 'month' : 'months'} × {selectedCurrency?.symbol}{amount || '0'}
+              </p>
+              <Slider
+                value={[selectedMonths]}
+                onValueChange={(value) => setSelectedMonths(value[0])}
+                min={1}
+                max={3}
+                step={1}
+                className="flex-grow"
+              />
+              <Input
+                type="number"
+                value={(parseFloat(amount || "0") * selectedMonths).toFixed(2)}
+                className="w-24"
+                readOnly
+              />
             </div>
           </div>
         </div>

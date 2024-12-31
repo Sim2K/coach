@@ -27,6 +27,8 @@ export type StripeSessionMetadata = {
   currency: string;
   originalAmount: string;
   paymentType: 'afford' | 'worth';
+  monthsCount?: string;
+  subsEnd?: string;
 };
 
 export type StripeSessionResponse = {
@@ -45,4 +47,5 @@ export interface CreateSessionRequest {
   currency: StripeCurrency;
   amount: number;
   paymentType: 'afford' | 'worth';
+  metadata?: Record<string, string>;
 }

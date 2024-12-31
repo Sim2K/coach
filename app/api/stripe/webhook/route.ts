@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
         if (!session.currency) missingFields.push('currency');
         if (!session.customer_details?.email) missingFields.push('customer_details.email');
         if (!session.metadata?.user_id) missingFields.push('metadata.user_id');
+        if (!session.metadata?.subscriptionEndDate) missingFields.push('metadata.subscriptionEndDate');
 
         if (missingFields.length > 0) {
           console.error('Missing required fields:', missingFields);
@@ -68,17 +69,6 @@ export async function POST(req: NextRequest) {
             { 
               message: `Missing required fields: ${missingFields.join(', ')}`,
               error: 'missing_required_fields'
-            },
-            { status: 400 }
-          );
-        }
-
-        if (!session.metadata?.user_id) {
-          console.error('Missing required user_id in session metadata');
-          return NextResponse.json(
-            { 
-              message: 'Missing required user_id in session metadata',
-              error: 'missing_user_id'
             },
             { status: 400 }
           );
@@ -96,13 +86,14 @@ export async function POST(req: NextRequest) {
           currency: (session.currency || 'usd').toUpperCase(),
           paymenttype: session.metadata?.paymentType || 'worth',
           timepaid: new Date().toISOString(),
-          stripepaymentid: typeof session.payment_intent === 'string' ? session.payment_intent : null
+          stripepaymentid: typeof session.payment_intent === 'string' ? session.payment_intent : null,
+          subsenddate: session.metadata?.subscriptionEndDate || null,
+          subsmonthcount: parseInt(session.metadata?.MonthsCount || '1')
         };
 
         console.log('Attempting to insert payment record:', paymentData);
 
-        console.log('Inserting payment record:', paymentData);
-
+        // Insert payment record
         const { error: insertError } = await supabase
           .from('payments')
           .insert([paymentData]);
@@ -118,6 +109,37 @@ export async function POST(req: NextRequest) {
           );
         }
 
+        // Update user profile with subscription end date and last donation
+        const { error: updateError } = await supabase
+          .from("userprofile")
+          .update({
+            last_donation: new Date().toISOString(),
+            subscription_end_date: session.metadata?.subscriptionEndDate?.split('T')[0]
+          })
+          .eq("user_id", session.metadata.user_id);
+
+        if (updateError) {
+          console.error('Error updating user profile:', updateError);
+          console.error('Update attempted with:', {
+            user_id: session.metadata.user_id,
+            subscription_end_date: session.metadata?.subscriptionEndDate?.split('T')[0],
+            last_donation: new Date().toISOString()
+          });
+          return NextResponse.json(
+            { 
+              message: 'Failed to update user profile',
+              error: updateError
+            },
+            { status: 500 }
+          );
+        }
+
+        console.log('Successfully updated user profile:', {
+          user_id: session.metadata.user_id,
+          subscription_end_date: session.metadata?.subscriptionEndDate?.split('T')[0],
+          last_donation: new Date().toISOString()
+        });
+        console.log('Successfully updated payment and user profile');
         return NextResponse.json({ received: true });
 
       default:

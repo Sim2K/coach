@@ -20,8 +20,8 @@ const initStripe = () => {
 
 export async function POST(request: Request) {
   try {
-    const { currency, amount, paymentType }: CreateSessionRequest = await request.json();
-    console.log('Received request:', { currency, amount, paymentType });
+    const { currency, amount, paymentType, metadata }: CreateSessionRequest = await request.json();
+    console.log('Received request:', { currency, amount, paymentType, metadata });
 
     // Get the authenticated user
     const supabase = createServerComponentClient({ cookies });
@@ -40,17 +40,6 @@ export async function POST(request: Request) {
     // Get the origin from the request headers or use the config default
     const origin = request.headers.get('origin') || config.returnUrl;
 
-    // Get the appropriate price ID for the currency
-    const priceId = config.priceIds[currency];
-    console.log('Selected price ID:', priceId);
-
-    if (!priceId) {
-      return NextResponse.json(
-        { message: `Currency ${currency} not supported` },
-        { status: 400 }
-      );
-    }
-
     // Create the checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -59,7 +48,13 @@ export async function POST(request: Request) {
       billing_address_collection: 'auto',
       line_items: [
         {
-          price: priceId,
+          price_data: {
+            currency: currency.toLowerCase(),
+            product_data: {
+              name: 'Accountability Life Coach',
+            },
+            unit_amount: Math.round(amount * 100), // Convert to cents
+          },
           quantity: 1,
         },
       ],
@@ -67,7 +62,9 @@ export async function POST(request: Request) {
         currency,
         originalAmount: amount.toString(),
         paymentType,
-        user_id: user.id
+        user_id: user.id,
+        subscriptionEndDate: metadata?.subscriptionEndDate || new Date().toISOString().split('T')[0],
+        MonthsCount: metadata?.MonthsCount || '1'
       },
       success_url: `${origin}/settings?tab=billing&status=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/settings?tab=billing&status=cancelled`,
