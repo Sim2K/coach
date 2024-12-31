@@ -11,6 +11,12 @@ interface ActivityGuardProps {
   type: 'goal' | 'milestone' | 'smart';
 }
 
+interface ChildProps {
+  onClick?: (e: React.MouseEvent) => void;
+  onMouseEnter?: (e: React.MouseEvent) => void;
+  [key: string]: any;
+}
+
 export function ActivityGuard({ children, action, type }: ActivityGuardProps) {
   // Function to check if user is active
   const checkIsActive = () => {
@@ -32,7 +38,7 @@ export function ActivityGuard({ children, action, type }: ActivityGuardProps) {
 
   // Clone the child button and modify its actions
   const child = React.Children.only(children);
-  if (React.isValidElement(child)) {
+  if (React.isValidElement<ChildProps>(child)) {
     return React.cloneElement(child, {
       onClick: (e: React.MouseEvent) => {
         if (!checkIsActive()) {
