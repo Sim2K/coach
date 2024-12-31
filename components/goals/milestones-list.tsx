@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Pencil, CheckCircle2, Trash2, Calendar } from "lucide-react";
+import { PlusCircle, Pencil, CheckCircle2, Trash2, Calendar, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { MilestoneDialog } from "./milestone-dialog";
@@ -14,7 +14,12 @@ import { Milestone } from "@/types/milestone";
 import { cn } from "@/lib/utils";
 import { ActivityGuard } from "@/lib/auth/activityGuard";
 
-export function MilestonesList({ goalId }: { goalId: string }) {
+interface MilestonesListProps {
+  goalId: string;
+  goalTargetDate: string;
+}
+
+export function MilestonesList({ goalId, goalTargetDate }: MilestonesListProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
@@ -147,13 +152,34 @@ export function MilestonesList({ goalId }: { goalId: string }) {
                   }
 
                   const finalClassName = cn(
-                    "p-4 md:p-6 border rounded-xl shadow-sm hover:shadow-md transition-all duration-200",
+                    "p-4 md:p-6 border rounded-xl shadow-sm hover:shadow-md transition-all duration-200 relative",
                     bgColor
                   );
 
                   return finalClassName;
                 })()}
               >
+                {/* Add warning icon for milestone target date beyond goal target date */}
+                {new Date(milestone.target_date) > new Date(goalTargetDate) && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="absolute bottom-2 left-2">
+                          <AlertTriangle 
+                            className="h-5 w-5 text-amber-500 animate-pulse" 
+                            style={{ 
+                              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                              opacity: '0.9'
+                            }} 
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Milestone target date is beyond the goal target date. Please update the milestone target date.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
                 <div className="flex flex-col md:flex-row justify-between items-start gap-3 mb-3">
                   <div className="flex items-start md:items-center space-x-2 w-full md:w-auto">
                     <h3 className="font-medium text-gray-900 break-words">{milestone.milestone_description}</h3>

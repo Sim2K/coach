@@ -28,7 +28,6 @@ export const menuItems = [
   { name: "Goals", href: "/goals", Icon: Target },
   { name: "Frameworks", href: "/soon-come", Icon: Crosshair },
   { name: "Settings", href: "/settings", Icon: Settings },
-  { name: "Updates", href: "/updates", Icon: Bell },
   { name: "Preferences", href: "/soon-come", Icon: Heart },
 ];
 

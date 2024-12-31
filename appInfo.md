@@ -969,39 +969,6 @@ create index idx_smartgoals_user_id on smartgoals(user_id);
 
 ---
 
-## Activity Status Management
-
-#### Overview
-The application uses a multi-layered approach to manage user activity status:
-
-1. **Database Layer**
-   - `userprofile.is_active` field stores the definitive activity status
-   - Updated by webhook on successful payment
-   - Updated by system checks for subscription expiry
-
-2. **Client-Side Management**
-   - ActivityInitializer component manages client-side status
-   - Stored in localStorage as 'userActivityStatus'
-   - Updated through multiple mechanisms:
-     - On page load
-     - Every 30 seconds via periodic check
-     - When window gains focus
-     - After successful payment verification
-
-3. **Status Check Flow**
-   - Webhook updates database on payment
-   - ActivityInitializer periodically checks status
-   - ActivityGuard uses localStorage for button permissions
-   - No page refresh required for status updates
-
-4. **Implementation Details**
-   - Location: `components/activity-initializer.tsx`
-   - Periodic check interval: 30 seconds
-   - Uses `initializeUserActivity()` from `lib/auth/loginChecks.ts`
-   - Handles cleanup of event listeners and intervals
-
----
-
 ## Goal and Milestone Dialogs
 
 ### New Goal Dialog
@@ -1122,6 +1089,29 @@ The application uses a multi-layered approach to manage user activity status:
    - Touch-friendly inputs
    - Proper keyboard handling
    - Maintains scroll position
+
+### Milestone Date Validation
+- Milestones have a visual warning system for target dates that exceed their parent goal's target date
+- Implementation in `components/goals/milestones-list.tsx`:
+  ```typescript
+  - Warning icon (AlertTriangle) appears in bottom-left corner
+  - Slow pulse animation using animate-pulse
+  - Amber color (text-amber-500) for warning state
+  - Tooltip explains the date validation issue
+  ```
+- Props passed from goal-details.tsx:
+  ```typescript
+  <MilestonesList 
+    goalId={goal.goal_id}
+    goalTargetDate={goal.target_date}
+  />
+  ```
+- Validation check:
+  ```typescript
+  {new Date(milestone.target_date) > new Date(goalTargetDate) && (
+    // Show warning icon with tooltip
+  )}
+  ```
 
 ### Shared Features
 1. **UI Components**

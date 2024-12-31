@@ -394,6 +394,11 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
         onUpdate={onUpdate}
       />
 
+      <MilestonesList 
+        goalId={goal.goal_id}
+        goalTargetDate={goal.target_date}
+      />
+
       <CompletionDialog
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
@@ -403,18 +408,6 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
       />
 
       <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="milestones">
-          <AccordionTrigger>
-            <div className="flex items-center gap-2">
-              <span>Milestones</span>
-              <span className="text-sm text-gray-500">({counts.milestones})</span>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <MilestonesList goalId={goal.goal_id} />
-          </AccordionContent>
-        </AccordionItem>
-
         <AccordionItem value="updates">
           <AccordionTrigger>
             <div className="flex items-center gap-2">

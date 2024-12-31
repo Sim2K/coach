@@ -100,16 +100,18 @@ export function SmartGoalDetails({ goalId, isEditing, onUpdate }: SmartGoalDetai
                 {smartGoal.status}
               </Badge>
             )}
-            <ActivityGuard action="create" type="smart">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDialog(true)}
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add SMART
-              </Button>
-            </ActivityGuard>
+            {!smartGoal && (
+              <ActivityGuard action="create" type="smart">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDialog(true)}
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add SMART
+                </Button>
+              </ActivityGuard>
+            )}
             {smartGoal && (
               <ActivityGuard action="edit" type="smart">
                 <Button
