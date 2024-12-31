@@ -12,6 +12,7 @@ import { getEnvironmentConfig } from "@/lib/config/environment";
 import { createCheckoutSession, redirectToCheckout } from "@/lib/stripe/client";
 import { StripeCurrency, StripeSessionResponse } from "@/types/stripe";
 import { supabase } from "@/lib/supabase";
+import { initializeUserActivity, setStoredActivityStatus } from "@/lib/auth/loginChecks";
 
 const currencies = [
   { code: "USD", symbol: "$", minAmount: 5, rate: 1 },/*  */
@@ -126,12 +127,18 @@ export function BillingSection() {
               currency: data.metadata.currency
             }).format(amount);
 
+            // Immediately update activity status
+            setStoredActivityStatus(true);
+            
             toast({
               title: "Payment Successful!",
               description: `Thank you for your ${formattedAmount} ${data.metadata.paymentType === 'worth' ? 'value-based' : 'accessibility-based'} payment.`,
               duration: 5000,
             });
 
+            // Force activity check after status update
+            await initializeUserActivity();
+            
             // You might want to update UI or trigger other actions based on payment success
             // For example, update subscription status, show receipt, etc.
           } else {

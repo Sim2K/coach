@@ -114,7 +114,8 @@ export async function POST(req: NextRequest) {
           .from("userprofile")
           .update({
             last_donation: new Date().toISOString(),
-            subscription_end_date: session.metadata?.subscriptionEndDate?.split('T')[0]
+            subscription_end_date: session.metadata?.subscriptionEndDate?.split('T')[0],
+            is_active: true
           })
           .eq("user_id", session.metadata.user_id);
 

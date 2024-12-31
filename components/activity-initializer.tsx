@@ -17,12 +17,21 @@ export function ActivityInitializer() {
     initialize();
 
     // Re-check activity status when window gains focus
-    const handleFocus = () => {
-      initialize();
+    const handleFocus = async () => {
+      await initializeUserActivity();
     };
 
+    // Set up periodic check every 30 seconds
+    const checkInterval = setInterval(async () => {
+      await initializeUserActivity();
+    }, 30000);
+
     window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(checkInterval);
+    };
   }, [isInitialized]);
 
   return null;

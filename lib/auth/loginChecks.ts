@@ -14,9 +14,10 @@ const getStoredActivityStatus = () => {
 };
 
 // Set activity status in storage
-const setStoredActivityStatus = (status: boolean) => {
+export const setStoredActivityStatus = (status: boolean) => {
   if (typeof window === 'undefined') return;
   localStorage.setItem('userActivityStatus', status.toString());
+  isUserActive = status; // Update global state immediately
 };
 
 // Initialize with stored value

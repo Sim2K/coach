@@ -307,6 +307,54 @@ This documentation will be updated as new features are added or existing ones ar
 
 ---
 
+## Recent Updates (2024-12-31)
+
+### Profile Page Updates
+
+#### Account Status Section
+- Renamed from "Account Settings" to "Account Status"
+- Displays subscription and account status information
+- All status indicators are read-only (no user modification allowed)
+
+Components:
+1. **Subscription End Date**
+   - Shows user's subscription expiry date
+   - Red background if subscription has expired
+   - Date displayed in user's local format
+
+2. **Active Status**
+   - Shows "Active Status: Active" or "Active Status: Inactive"
+   - Red background when inactive
+   - Read-only status display
+   - Removed user toggle switch
+   - Status tied to subscription validity
+
+3. **Induction Status**
+   - Shows "Induction: Complete" or "Induction: Incomplete"
+   - Read-only status display
+   - Removed user toggle switch
+
+4. **Last Login**
+   - Updated to "Last Login with Ajay"
+   - Shows timestamp in user's local format
+
+### Activity Status Management
+
+#### Client-Side Updates
+- Immediate status updates after successful payment
+- No page refresh required for status changes
+- Periodic status checks (30-second intervals)
+- Window focus triggers status refresh
+
+#### Implementation Details
+- Uses localStorage for persistent state
+- Global isUserActive state for real-time updates
+- Webhook updates database on payment success
+- ActivityInitializer component manages status checks
+- ActivityGuard enforces access based on status
+
+---
+
 ## Goals Page Mobile View
 
 ### Layout Hierarchy
@@ -918,6 +966,39 @@ create index idx_smartgoals_user_id on smartgoals(user_id);
    - Props for data passing
    - Callbacks for updates
    - Loading states
+
+---
+
+## Activity Status Management
+
+#### Overview
+The application uses a multi-layered approach to manage user activity status:
+
+1. **Database Layer**
+   - `userprofile.is_active` field stores the definitive activity status
+   - Updated by webhook on successful payment
+   - Updated by system checks for subscription expiry
+
+2. **Client-Side Management**
+   - ActivityInitializer component manages client-side status
+   - Stored in localStorage as 'userActivityStatus'
+   - Updated through multiple mechanisms:
+     - On page load
+     - Every 30 seconds via periodic check
+     - When window gains focus
+     - After successful payment verification
+
+3. **Status Check Flow**
+   - Webhook updates database on payment
+   - ActivityInitializer periodically checks status
+   - ActivityGuard uses localStorage for button permissions
+   - No page refresh required for status updates
+
+4. **Implementation Details**
+   - Location: `components/activity-initializer.tsx`
+   - Periodic check interval: 30 seconds
+   - Uses `initializeUserActivity()` from `lib/auth/loginChecks.ts`
+   - Handles cleanup of event listeners and intervals
 
 ---
 

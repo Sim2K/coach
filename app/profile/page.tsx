@@ -36,6 +36,7 @@ interface UserProfile {
   city: string | null;
   age: number | null;
   gender: string | null;
+  subscription_end_date: string | null;
 }
 
 export default function ProfilePage() {
@@ -291,35 +292,46 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {/* Account Settings */}
+                  {/* Account Status */}
                   <div className="col-span-full space-y-4">
-                    <h2 className="text-lg font-semibold text-gray-900 pb-2 border-b">Account Settings</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 pb-2 border-b">Account Status</h2>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                        <div>
-                          <Label className="text-sm font-medium">Active Status</Label>
-                          <p className="text-sm text-gray-500">Enable or disable your account status</p>
+                      {/* Subscription End Date */}
+                      {formData.subscription_end_date && (
+                        <div className={`p-3 rounded-lg ${
+                          new Date(formData.subscription_end_date) < new Date() 
+                          ? 'bg-red-50' 
+                          : 'bg-gray-50'
+                        }`}>
+                          <Label className="text-sm font-medium">Subscription End Date</Label>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {new Date(formData.subscription_end_date).toLocaleDateString()}
+                          </p>
                         </div>
-                        <Switch
-                          checked={formData.is_active}
-                          onCheckedChange={(checked) => handleInputChange("is_active", checked)}
-                          disabled={!isEditing}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                      )}
+                      
+                      {/* Active Status */}
+                      <div className={`p-3 rounded-lg ${!formData.is_active ? 'bg-red-50' : 'bg-gray-50'}`}>
                         <div>
-                          <Label className="text-sm font-medium">Induction Complete</Label>
-                          <p className="text-sm text-gray-500">Mark your induction status</p>
+                          <Label className="text-sm font-medium">
+                            Active Status: {formData.is_active ? 'Active' : 'Inactive'}
+                          </Label>
+                          <p className="text-sm text-gray-500">This is status of your subscription</p>
                         </div>
-                        <Switch
-                          checked={formData.induction_complete}
-                          onCheckedChange={(checked) => handleInputChange("induction_complete", checked)}
-                          disabled={!isEditing}
-                        />
                       </div>
+
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <div>
+                          <Label className="text-sm font-medium">
+                            Induction: {formData.induction_complete ? 'Complete' : 'Incomplete'}
+                          </Label>
+                          <p className="text-sm text-gray-500">Your induction status</p>
+                        </div>
+                      </div>
+
                       {formData.last_logged_in && (
                         <div className="bg-gray-50 p-3 rounded-lg">
-                          <Label className="text-sm font-medium">Last Login</Label>
+                          <Label className="text-sm font-medium">Last Login with Ajay</Label>
                           <p className="text-sm text-gray-500 mt-1">
                             {new Date(formData.last_logged_in).toLocaleString()}
                           </p>
