@@ -396,7 +396,7 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
 
       <MilestonesList 
         goalId={goal.goal_id}
-        goalTargetDate={goal.target_date}
+        goalTargetDate={goal.target_date || ''}
       />
 
       <CompletionDialog

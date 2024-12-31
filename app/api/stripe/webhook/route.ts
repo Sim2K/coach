@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
 
         // Add payment record to database with exact schema match
         const paymentData = {
-          user_id: session.metadata.user_id,
+          user_id: session.metadata?.user_id || '',  
           issuccess: true,
           status: 'completed',
           paymentstatus: session.payment_status || 'paid',
@@ -90,6 +90,18 @@ export async function POST(req: NextRequest) {
           subsenddate: session.metadata?.subscriptionEndDate || null,
           subsmonthcount: parseInt(session.metadata?.MonthsCount || '1')
         };
+
+        // If user_id is missing, we can't proceed
+        if (!paymentData.user_id) {
+          console.error('Missing required user_id in session metadata');
+          return NextResponse.json(
+            { 
+              message: 'Missing required user_id in session metadata',
+              error: 'missing_user_id'
+            },
+            { status: 400 }
+          );
+        }
 
         console.log('Attempting to insert payment record:', paymentData);
 
@@ -117,12 +129,12 @@ export async function POST(req: NextRequest) {
             subscription_end_date: session.metadata?.subscriptionEndDate?.split('T')[0],
             is_active: true
           })
-          .eq("user_id", session.metadata.user_id);
+          .eq("user_id", paymentData.user_id);
 
         if (updateError) {
           console.error('Error updating user profile:', updateError);
           console.error('Update attempted with:', {
-            user_id: session.metadata.user_id,
+            user_id: paymentData.user_id,
             subscription_end_date: session.metadata?.subscriptionEndDate?.split('T')[0],
             last_donation: new Date().toISOString()
           });
@@ -136,7 +148,7 @@ export async function POST(req: NextRequest) {
         }
 
         console.log('Successfully updated user profile:', {
-          user_id: session.metadata.user_id,
+          user_id: paymentData.user_id,
           subscription_end_date: session.metadata?.subscriptionEndDate?.split('T')[0],
           last_donation: new Date().toISOString()
         });

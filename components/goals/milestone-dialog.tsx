@@ -16,6 +16,7 @@ interface MilestoneDialogProps {
   onOpenChange: (open: boolean) => void;
   milestone: Milestone | null;
   goalId: string;
+  goalTargetDate?: string;
   onMilestoneChange: () => void;
   onMilestoneAdded?: () => void;
   previousMilestoneData: {
@@ -31,6 +32,7 @@ export function MilestoneDialog({
   onOpenChange,
   milestone,
   goalId,
+  goalTargetDate,
   onMilestoneChange,
   onMilestoneAdded,
   previousMilestoneData,
@@ -63,9 +65,20 @@ export function MilestoneDialog({
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true); // Optional: Set loading state
+    setIsLoading(true);
 
     try {
+      // Validate target date against goal target date
+      if (goalTargetDate && formData.target_date) {
+        const milestoneDate = new Date(formData.target_date);
+        const goalDate = new Date(goalTargetDate);
+        if (milestoneDate > goalDate) {
+          toast.error("Milestone target date cannot be later than the goal target date");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       if (milestone) {
         // Update existing milestone
         const updatePayload: any = {
@@ -124,6 +137,7 @@ export function MilestoneDialog({
     onOpenChange,
     previousMilestoneData,
     onMilestoneAdded,
+    goalTargetDate,
   ]);
 
   return (

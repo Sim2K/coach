@@ -16,7 +16,7 @@ import { ActivityGuard } from "@/lib/auth/activityGuard";
 
 interface MilestonesListProps {
   goalId: string;
-  goalTargetDate: string;
+  goalTargetDate?: string;
 }
 
 export function MilestonesList({ goalId, goalTargetDate }: MilestonesListProps) {
@@ -160,7 +160,7 @@ export function MilestonesList({ goalId, goalTargetDate }: MilestonesListProps) 
                 })()}
               >
                 {/* Add warning icon for milestone target date beyond goal target date */}
-                {new Date(milestone.target_date) > new Date(goalTargetDate) && (
+                {goalTargetDate && new Date(milestone.target_date) > new Date(goalTargetDate) && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -276,6 +276,7 @@ export function MilestonesList({ goalId, goalTargetDate }: MilestonesListProps) 
           }}
           milestone={selectedMilestone}
           goalId={goalId}
+          goalTargetDate={goalTargetDate}
           onMilestoneChange={fetchMilestones}
           previousMilestoneData={previousMilestoneData}
         />
