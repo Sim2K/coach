@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { checkUserActivity, showActivityStatus } from "@/lib/auth/loginChecks";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -58,11 +59,20 @@ export function LoginForm() {
         return;
       }
 
+      // Check user activity status
+      const { isActive, expiryDate } = await checkUserActivity(data.session.user.id);
+      
+      // Show login success first
       toast.success("Successfully logged in!");
+      
+      // Show activity status after a short delay
+      setTimeout(() => {
+        showActivityStatus(isActive, expiryDate);
+      }, 2000);
       
       // Force a reload to ensure middleware picks up the new session
       router.refresh();
-      router.push('/profile');
+      router.push('/goals');
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || "An error occurred while logging in.");

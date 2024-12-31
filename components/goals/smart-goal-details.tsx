@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, Plus, Edit } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Edit, PlusCircle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import {
@@ -14,6 +14,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { SmartGoalDialog } from "./smart-goal-dialog";
+import { ActivityGuard } from "@/lib/auth/activityGuard";
 
 interface SmartGoal {
   smart_id: string;
@@ -99,23 +100,28 @@ export function SmartGoalDetails({ goalId, isEditing, onUpdate }: SmartGoalDetai
                 {smartGoal.status}
               </Badge>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDialog(true)}
-            >
-              {smartGoal ? (
-                <>
-                  <Edit className="h-4 w-4 mr-2" />
+            <ActivityGuard action="create" type="smart">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDialog(true)}
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add SMART
+              </Button>
+            </ActivityGuard>
+            {smartGoal && (
+              <ActivityGuard action="edit" type="smart">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDialog(true)}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
                   Edit SMART
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add SMART
-                </>
-              )}
-            </Button>
+                </Button>
+              </ActivityGuard>
+            )}
           </div>
         </div>
 

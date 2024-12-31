@@ -16,14 +16,10 @@ import { UpdatesList } from "./updates-list";
 import { EngagementsList } from "./engagements-list";
 import { FeedbackList } from "./feedback-list";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Goal } from "@/types/goal";
 import { SmartGoalDetails } from "./smart-goal-details";
+import { ActivityGuard } from "@/lib/auth/activityGuard";
 
 const getEffortLevelColor = (level: number) => {
   const colors = {
@@ -227,12 +223,14 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
         <div className="flex gap-2 mt-4 md:hidden">
           {!isEditing ? (
             <>
-              <Button
-                className="flex-1"
-                onClick={() => setIsEditing(true)}
-              >
-                Edit Goal
-              </Button>
+              <ActivityGuard action="edit" type="goal">
+                <Button
+                  className="flex-1"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit Goal
+                </Button>
+              </ActivityGuard>
               <Button
                 variant="destructive"
                 className="flex-1"
@@ -264,11 +262,13 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
         <div className="hidden md:flex md:gap-2">
           {!isEditing ? (
             <>
-              <Button
-                onClick={() => setIsEditing(true)}
-              >
-                Edit Goal
-              </Button>
+              <ActivityGuard action="edit" type="goal">
+                <Button
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit Goal
+                </Button>
+              </ActivityGuard>
               <Button
                 variant="destructive"
                 onClick={handleDelete}

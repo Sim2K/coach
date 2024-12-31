@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Milestone } from "@/types/milestone";
 import { cn } from "@/lib/utils";
+import { ActivityGuard } from "@/lib/auth/activityGuard";
 
 export function MilestonesList({ goalId }: { goalId: string }) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
@@ -106,17 +107,19 @@ export function MilestonesList({ goalId }: { goalId: string }) {
       <CardContent className="p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Milestones</h3>
-          <Button
-            size="sm"
-            onClick={() => {
-              setSelectedMilestone(null);
-              setShowDialog(true);
-              setPreviousMilestoneData(null);
-            }}
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            New Milestone
-          </Button>
+          <ActivityGuard action="create" type="milestone">
+            <Button
+              size="sm"
+              onClick={() => {
+                setSelectedMilestone(null);
+                setShowDialog(true);
+                setPreviousMilestoneData(null);
+              }}
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              New Milestone
+            </Button>
+          </ActivityGuard>
         </div>
 
         {milestones.length === 0 ? (
@@ -159,13 +162,15 @@ export function MilestonesList({ goalId }: { goalId: string }) {
                     )}
                   </div>
                   <div className="flex items-center space-x-2 w-full md:w-auto justify-end">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleEdit(milestone)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    <ActivityGuard action="edit" type="milestone">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEdit(milestone)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </ActivityGuard>
                     {!milestone.achieved && (
                       <TooltipProvider>
                         <Tooltip>

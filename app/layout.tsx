@@ -2,12 +2,13 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
+import { ActivityInitializer } from '@/components/activity-initializer';
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Content Fly - Creator Community",
-  description: "Join our amazing community of creators",
+  title: "Veedence",
+  description: "Veedence - AI-Powered Personal Growth Dashboard",
 };
 
 export default function RootLayout({
@@ -18,8 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {children}
+        <ActivityInitializer />
         <Toaster />
+        {children}
       </body>
     </html>
   );

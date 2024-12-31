@@ -19,9 +19,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // If user is signed in and trying to access public routes, redirect to profile
+  // If user is signed in and trying to access public routes, redirect to goals
   if (session && isPublicRoute) {
-    return NextResponse.redirect(new URL('/profile', request.url));
+    return NextResponse.redirect(new URL('/goals', request.url));
   }
 
   return res;

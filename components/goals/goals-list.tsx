@@ -7,6 +7,7 @@ import { NewGoalDialog } from "./new-goal-dialog";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Goal } from "@/types/goal";
+import { ActivityGuard } from "@/lib/auth/activityGuard";
 
 interface GoalsListProps {
   goals: Goal[];
@@ -33,10 +34,12 @@ export function GoalsList({ goals, selectedGoal, onSelectGoal, onGoalCreated }: 
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Goals</h2>
-        <Button size="sm" onClick={() => setShowNewGoal(true)}>
-          <PlusCircle className="h-4 w-4 mr-2" />
-          New Goal
-        </Button>
+        <ActivityGuard action="create" type="goal">
+          <Button size="sm" onClick={() => setShowNewGoal(true)}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New Goal
+          </Button>
+        </ActivityGuard>
       </div>
 
       <div className="space-y-4">
