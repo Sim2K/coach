@@ -92,20 +92,20 @@ export function MilestoneDialog({
           achieved: formData.achieved,
           achievement_date: formData.achievement_date,
           last_updated: new Date().toISOString(),
-          review_needed: true,
         };
 
-        // If previousMilestoneData is provided, include it
-        if (previousMilestoneData) {
+        // Only store backup if review_needed is false
+        if (!milestone.review_needed && previousMilestoneData) {
           updatePayload.review_previous_milestone = previousMilestoneData;
+          updatePayload.review_needed = true;
         }
 
-        const { error } = await supabase
+        const { error: updateError } = await supabase
           .from("milestones")
           .update(updatePayload)
           .eq("milestone_id", milestone.milestone_id);
 
-        if (error) throw error;
+        if (updateError) throw updateError;
         toast.success("Milestone updated successfully");
       } else {
         // Create new milestone

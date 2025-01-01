@@ -309,6 +309,47 @@ This documentation will be updated as new features are added or existing ones ar
 
 ---
 
+## Record Backup System
+
+### Goals and Milestones Backup
+1. Record Backup Conditions:
+   - Backup is only stored when `review_needed` is `false`
+   - When a backup is stored, `review_needed` is set to `true`
+   - Previous record data is stored in JSON format
+   - Goals use `review_previous_goal` field for backup
+   - Milestones use `review_previous_milestone` field for backup
+
+2. Goal Backup Fields:
+   ```typescript
+   {
+     goal_description: string;
+     goal_type: string;
+     target_date: string;
+     progress: number;
+     effort_level: number;
+     is_completed: boolean;
+     goal_title: string;
+   }
+   ```
+
+3. Milestone Backup Fields:
+   ```typescript
+   {
+     milestone_description: string;
+     target_date: string;
+     achieved: boolean;
+     achievement_date: string | null;
+   }
+   ```
+
+4. Backup Process:
+   - Current state is captured before editing starts
+   - Backup is stored only if the record is not under review
+   - When backup is stored, record is marked for review
+   - Backup is stored as a partial type of the original record
+
+---
+
 ## Recent Updates (2024-12-31)
 
 ### Profile Page Updates
@@ -1537,29 +1578,16 @@ create table
     relevant text null,
     time_bound date null,
     smart_progress numeric(5, 2) null default 0.00,
-    status character varying(50) null default 'Pending'::character varying,
+    status text null default 'Pending',
     created_at timestamp with time zone null default now(),
     updated_at timestamp with time zone null default now(),
     review_needed boolean null default false,
-    constraint smartgoals_pkey primary key (smart_id),
-    constraint smartgoals_smart_id_key unique (smart_id),
-    constraint smartgoals_goal_id_fkey foreign key (goal_id) references goals (goal_id) on delete cascade,
-    constraint smartgoals_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade,
-    constraint smartgoals_status_check check (
-      (
-        (status)::text = any (
-          (
-            array[
-              'Pending'::character varying,
-              'In Progress'::character varying,
-              'Completed'::character varying,
-              'On Hold'::character varying
-            ]
-          )::text[]
-        )
-      )
-    )
-  ) tablespace pg_default;   
+    review_previous_smart jsonb
+);
+
+-- Indexes
+create index idx_smartgoals_goal_id on smartgoals(goal_id);
+create index idx_smartgoals_user_id on smartgoals(user_id);
 ```
 
 ### frameworks Table (`frameworks`)

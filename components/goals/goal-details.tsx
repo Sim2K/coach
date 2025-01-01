@@ -145,11 +145,12 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
         progress: formData.progress,
         effort_level: formData.effort_level,
         goal_title: formData.goal_title,
-        review_needed: true,
       };
 
-      if (previousGoalData) {
+      // Only store backup if review_needed is false
+      if (!goal.review_needed && previousGoalData) {
         updatePayload.review_previous_goal = previousGoalData;
+        updatePayload.review_needed = true;
       }
 
       const { error } = await supabase
@@ -168,7 +169,7 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
     } finally {
       setIsLoading(false);
     }
-  }, [formData, goal.goal_id, onUpdate, previousGoalData]);
+  }, [formData, goal, onUpdate, previousGoalData]);
 
   const handleDelete = useCallback(async () => {
     const confirmation = window.confirm("Are you sure you want to delete this goal?");
