@@ -1208,7 +1208,7 @@ create index idx_smartgoals_user_id on smartgoals(user_id);
      const { data: { session } } = await supabase.auth.getSession();
      
      // Public routes that don't require authentication
-     const publicRoutes = ['/auth/login', '/'];
+     const publicRoutes = ['/auth/login', '/auth/register', '/', '/api/stripe/webhook'];
      const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname);
 
      // Route protection logic
@@ -1322,7 +1322,9 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 
 #### Public Routes
 - `/auth/login`: Login page
+- `/auth/register`: Register page
 - `/`: Root redirect to login
+- `/api/stripe/webhook`: Stripe webhook endpoint
 
 #### Protected Routes
 - `/profile`: User profile
@@ -1345,6 +1347,27 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 - Proper error responses from API routes
 - Session validation in middleware
 - Environment variable checks
+
+## Authentication Flow
+- **Login Page** (`/auth/login`):
+  - Redirects to `/profile` if user is already logged in
+  - Contains links to register page for both mobile and desktop views
+  - Uses Supabase authentication
+
+- **Register Page** (`/auth/register`):
+  - Accessible whether logged in or not
+  - Registration form with fields:
+    - First Name
+    - Last Name
+    - Email
+    - Password
+    - Nickname
+    - Login Key
+  - Uses Supabase for user registration
+
+- **Auth Layout** (`/auth/layout.tsx`):
+  - Only redirects to profile if user is logged in AND on login page
+  - Allows access to register page regardless of authentication status
 
 ## Database Table Structure
 

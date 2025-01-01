@@ -14,7 +14,7 @@ export default function AuthLayout({
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      if (session && window.location.pathname === '/auth/login') {
         router.push("/profile");
       }
     };
