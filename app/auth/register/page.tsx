@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { RegisterForm } from "@/components/auth/register-form";
-import { Hexagon } from "lucide-react";
 
 export default function RegisterPage() {
   return (
@@ -15,24 +14,13 @@ export default function RegisterPage() {
           <div className="w-48 h-48 bg-[url('/images/svg/veedence_logo.svg')] bg-contain bg-no-repeat bg-center" />
         </div>
         <div className="auth-logo">
-          <Hexagon className="mr-2 h-8 w-8" />
+          <div className="mr-2 h-8 w-8 bg-[url('/images/svg/veedence_logo.svg')] bg-contain bg-no-repeat bg-center" />
           Another Veedence.co.uk idea
         </div>
         <div className="relative z-20 flex flex-col justify-center flex-1 px-4 md:px-8">
           <h1 className="text-2xl md:text-3xl font-bold leading-relaxed max-w-xl italic font-serif text-center mx-auto">
             Start Your Journey with Veedence! Sign up now to unlock personalized, AI-powered coaching tailored just for you. Your goals, milestones, and progress—everything in one seamless platform!
           </h1>
-          <div className="auth-avatar-stack mt-auto">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="auth-avatar">
-                <img
-                  src={`https://source.unsplash.com/random/100x100?portrait=${i}`}
-                  alt={`Creator ${i}`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ))}
-          </div>
         </div>
         <svg
           className="curved-line"

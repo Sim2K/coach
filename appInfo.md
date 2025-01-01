@@ -1151,6 +1151,14 @@ create index idx_smartgoals_user_id on smartgoals(user_id);
 
 ---
 
+## Register Page UI
+- Left side panel contains Veedence logo (8x8 size) with text "Another Veedence.co.uk idea"
+- Removed avatar stack from bottom of left panel for cleaner UI
+- Background includes gradient and floating shapes for visual appeal
+- Maintains responsive design with mobile-first approach
+
+---
+
 ## Authentication and Configuration
 
 ### Login Flow
