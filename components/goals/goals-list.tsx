@@ -73,7 +73,7 @@ export function GoalsList({ goals, selectedGoal, onSelectGoal, onGoalCreated }: 
               </Tooltip>
             </TooltipProvider>
             
-            <h3 className="font-medium mb-2 pr-10">{goal.goal_description}</h3>
+            <h3 className="font-medium mb-2 pr-10">{goal.goal_title}</h3>
             <div className="border border-gray-200 rounded-full">
               <Progress value={goal.progress} className="h-2 mb-2" />
             </div>

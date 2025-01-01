@@ -70,9 +70,14 @@ export function MilestoneDialog({
     try {
       // Validate target date against goal target date
       if (goalTargetDate && formData.target_date) {
-        const milestoneDate = new Date(formData.target_date);
-        const goalDate = new Date(goalTargetDate);
-        if (milestoneDate > goalDate) {
+        const milestoneDate = new Date(formData.target_date + 'T23:59:59');
+        const goalDate = new Date(goalTargetDate + 'T23:59:59');
+        
+        // Set time to end of day for fair comparison
+        milestoneDate.setUTCHours(23, 59, 59, 999);
+        goalDate.setUTCHours(23, 59, 59, 999);
+        
+        if (milestoneDate.getTime() > goalDate.getTime()) {
           toast.error("Milestone target date cannot be later than the goal target date");
           setIsLoading(false);
           return;

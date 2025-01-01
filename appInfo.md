@@ -1379,7 +1379,7 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 
 ## Database Table Structure
 
-### User Profile Table (`users`)
+### User Profile Table (`userprofile`)
 ```sql
 create table
   public.userprofile (
@@ -1430,3 +1430,224 @@ create table
   ) tablespace pg_default;
 
 create index if not exists idx_payments_user_id on public.payments using btree (user_id) tablespace pg_default;
+```
+
+### goals Table (`goals`)
+```sql
+create table
+  public.goals (
+    goal_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    goal_description text not null,
+    goal_type character varying(50) null,
+    created_at timestamp with time zone null default now(),
+    target_date date null,
+    progress numeric(5, 2) null default 0.00,
+    is_completed boolean null default false,
+    last_updated timestamp with time zone null default now(),
+    effort_level numeric null default '3'::numeric,
+    review_needed boolean null default false,
+    review_previous_goal jsonb null,
+    framework_id uuid null,
+    goal_title text null,
+    constraint goals_pkey primary key (goal_id),
+    constraint goals_framework_id_fkey foreign key (framework_id) references frameworks (framework_id) on delete cascade,
+    constraint goals_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_goals_user_id on public.goals using btree (user_id) tablespace pg_default;
+```
+
+### milestones Table (`milestones`)
+```sql
+create table
+  public.milestones (
+    milestone_id uuid not null default gen_random_uuid (),
+    goal_id uuid null,
+    milestone_description text not null,
+    target_date date null,
+    achieved boolean null default false,
+    achievement_date date null,
+    created_at timestamp with time zone null default now(),
+    last_updated timestamp with time zone null default now(),
+    review_needed boolean null default false,
+    review_previous_milestone jsonb null,
+    framework_level_id uuid null,
+    constraint milestones_pkey primary key (milestone_id),
+    constraint milestones_framework_level_id_fkey foreign key (framework_level_id) references framework_levels (level_id) on delete cascade,
+    constraint milestones_goal_id_fkey foreign key (goal_id) references goals (goal_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_milestones_goal_id on public.milestones using btree (goal_id) tablespace pg_default;
+```
+
+### smartgoals Table (`smartgoals`)
+```sql
+create table
+  public.smartgoals (
+    smart_id uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    goal_id uuid null,
+    specific text null,
+    measurable text null,
+    achievable text null,
+    relevant text null,
+    time_bound date null,
+    smart_progress numeric(5, 2) null default 0.00,
+    status character varying(50) null default 'Pending'::character varying,
+    created_at timestamp with time zone null default now(),
+    updated_at timestamp with time zone null default now(),
+    review_needed boolean null default false,
+    constraint smartgoals_pkey primary key (smart_id),
+    constraint smartgoals_smart_id_key unique (smart_id),
+    constraint smartgoals_goal_id_fkey foreign key (goal_id) references goals (goal_id) on delete cascade,
+    constraint smartgoals_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade,
+    constraint smartgoals_status_check check (
+      (
+        (status)::text = any (
+          (
+            array[
+              'Pending'::character varying,
+              'In Progress'::character varying,
+              'Completed'::character varying,
+              'On Hold'::character varying
+            ]
+          )::text[]
+        )
+      )
+    )
+  ) tablespace pg_default;   
+```
+
+### frameworks Table (`frameworks`)
+```sql
+create table
+  public.frameworks (
+    framework_id uuid not null default gen_random_uuid (),
+    name text not null,
+    description text null,
+    type text not null,
+    version text null default '1.0'::text,
+    created_by uuid null,
+    updated_by uuid null,
+    created_at timestamp with time zone null default now(),
+    updated_at timestamp with time zone null default now(),
+    constraint frameworks_pkey primary key (framework_id),
+    constraint frameworks_created_by_fkey foreign key (created_by) references auth.users (id),
+    constraint frameworks_updated_by_fkey foreign key (updated_by) references auth.users (id)
+  ) tablespace pg_default;
+
+create index if not exists idx_framework_name on public.frameworks using btree (name) tablespace pg_default;      
+``` 
+
+### framework_levels Table (`framework_levels`)
+```sql
+create table
+  public.framework_levels (
+    level_id uuid not null default gen_random_uuid (),
+    framework_id uuid not null,
+    name text not null,
+    description text null,
+    level_order integer not null,
+    parent_level_id uuid null,
+    framework_cluster_name text null,
+    framework_edi_compliance boolean null default false,
+    constraint framework_levels_pkey primary key (level_id),
+    constraint framework_levels_framework_id_fkey foreign key (framework_id) references frameworks (framework_id) on delete cascade,
+    constraint framework_levels_parent_level_id_fkey foreign key (parent_level_id) references framework_levels (level_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_framework_level_name on public.framework_levels using btree (name) tablespace pg_default;
+
+create index if not exists idx_framework_cluster_name on public.framework_levels using btree (framework_cluster_name) tablespace pg_default;
+```
+
+### feedback Table (`feedback`)
+```sql
+create table
+  public.feedback (
+    feedback_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    feedback_date date null default current_date,
+    feedback_type character varying(50) null,
+    feedback_content text null,
+    action_taken text null,
+    fk_goals uuid null,
+    fk_milestones uuid null,
+    fk_engagement uuid null,
+    constraint feedback_pkey primary key (feedback_id),
+    constraint feedback_fk_engagement_fkey foreign key (fk_engagement) references engagement (engagement_id),
+    constraint feedback_fk_goals_fkey foreign key (fk_goals) references goals (goal_id),
+    constraint feedback_fk_milestones_fkey foreign key (fk_milestones) references milestones (milestone_id),
+    constraint feedback_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_feedback_user_id on public.feedback using btree (user_id) tablespace pg_default;
+```
+
+### engagement Table (`engagement`)
+```sql
+create table
+  public.engagement (
+    engagement_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    interaction_type character varying(50) null,
+    interaction_date timestamp with time zone null default now(),
+    response_time interval null,
+    sentiment character varying(20) null,
+    notes text null,
+    fk_feedback uuid null,
+    fk_milestones uuid null,
+    fk_goals uuid null,
+    constraint engagement_pkey primary key (engagement_id),
+    constraint engagement_fk_feedback_fkey foreign key (fk_feedback) references feedback (feedback_id),
+    constraint engagement_fk_goals_fkey foreign key (fk_goals) references goals (goal_id),
+    constraint engagement_fk_milestones_fkey foreign key (fk_milestones) references milestones (milestone_id),
+    constraint engagement_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_engagement_user_id on public.engagement using btree (user_id) tablespace pg_default;
+```
+
+### settings Table (`updates`)
+```sql
+create table
+  public.updates (
+    update_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    update_type character varying(50) null,
+    update_date timestamp with time zone null default now(),
+    previous_value text null,
+    new_value text null,
+    update_reason text null,
+    source character varying(20) null,
+    notes text null,
+    reverted boolean null default false,
+    revert_date timestamp with time zone null,
+    fk_goal uuid null,
+    fk_milestone uuid null,
+    update_title text null,
+    constraint updates_pkey primary key (update_id),
+    constraint updates_fk_goal_fkey foreign key (fk_goal) references goals (goal_id),
+    constraint updates_fk_milestone_fkey foreign key (fk_milestone) references milestones (milestone_id),
+    constraint updates_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_updates_user_id on public.updates using btree (user_id) tablespace pg_default;
+```
+
+### userlogins Table (`userlogins`)
+```sql
+create table
+  public.userlogins (
+    login_id uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    login_time timestamp with time zone not null default now(),
+    time_diff_hours numeric null,
+    constraint userlogins_pkey primary key (login_id),
+    constraint userlogins_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_userlogins_user_id on public.userlogins using btree (user_id) tablespace pg_default;
+```
+

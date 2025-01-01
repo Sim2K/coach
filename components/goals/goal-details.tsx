@@ -56,6 +56,7 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
     progress: goal.progress || 0,
     effort_level: goal.effort_level || 3,
     is_completed: goal.is_completed || false,
+    goal_title: goal.goal_title || "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [previousGoalData, setPreviousGoalData] = useState<{
@@ -75,6 +76,7 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
       progress: goal.progress || 0,
       effort_level: goal.effort_level || 3,
       is_completed: goal.is_completed || false,
+      goal_title: goal.goal_title || "",
     });
   }, [goal]);
 
@@ -128,6 +130,11 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
       return;
     }
 
+    if (!formData.goal_title.trim()) {
+      toast.error("Title cannot be empty");
+      return;
+    }
+
     setIsLoading(true);
     try {
       let updatePayload: any = {
@@ -136,6 +143,7 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
         target_date: formData.target_date,
         progress: formData.progress,
         effort_level: formData.effort_level,
+        goal_title: formData.goal_title,
         review_needed: true,
       };
 
@@ -183,23 +191,73 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
     }
   }, [goal.goal_id, onUpdate]);
 
+  const startEditing = () => {
+    // Capture current state before editing
+    setPreviousGoalData({
+      goal_description: goal.goal_description,
+      goal_type: goal.goal_type || "",
+      target_date: goal.target_date || "",
+      progress: goal.progress || 0,
+      effort_level: goal.effort_level || 3,
+      is_completed: goal.is_completed || false,
+      goal_title: goal.goal_title || ""
+    });
+    setIsEditing(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Menu */}
-      <div className="hidden md:flex md:justify-between md:mt-4">
-        {onToggleMaximize && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onToggleMaximize}
-          >
-            {isMaximized ? (
-              <Minimize2 className="h-5 w-5" />
-            ) : (
-              <Maximize2 className="h-5 w-5" />
-            )}
-          </Button>
-        )}
+      <div className="hidden md:flex md:justify-between md:items-center md:mt-4">
+        <div className="flex items-center">
+          {onToggleMaximize && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleMaximize}
+            >
+              {isMaximized ? (
+                <Minimize2 className="h-5 w-5" />
+              ) : (
+                <Maximize2 className="h-5 w-5" />
+              )}
+            </Button>
+          )}
+        </div>
+        
+        <div className="flex gap-2">
+          {!isEditing ? (
+            <>
+              <ActivityGuard action="edit" type="goal">
+                <Button
+                  onClick={startEditing}
+                >
+                  Edit Goal
+                </Button>
+              </ActivityGuard>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+              >
+                Delete Goal
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdate}
+              >
+                Save Changes
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Back button row */}
@@ -215,83 +273,75 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
         </div>
       )}
 
-      {/* Title row */}
-      <div className="flex flex-col md:flex-row md:justify-between mt-4 md:mt-0">
-        <h2 className="text-2xl font-bold text-gray-900">{goal.goal_description}</h2>
-        
-        {/* Actions - mobile view */}
-        <div className="flex gap-2 mt-4 md:hidden">
-          {!isEditing ? (
-            <>
-              <ActivityGuard action="edit" type="goal">
-                <Button
-                  className="flex-1"
-                  onClick={() => setIsEditing(true)}
-                >
-                  Edit Goal
-                </Button>
-              </ActivityGuard>
-              <Button
-                variant="destructive"
-                className="flex-1"
-                onClick={handleDelete}
-              >
-                Delete Goal
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </Button>
+      {/* Actions - mobile view */}
+      <div className="flex gap-2 mt-4 block md:hidden">
+        {!isEditing ? (
+          <>
+            <ActivityGuard action="edit" type="goal">
               <Button
                 className="flex-1"
-                onClick={handleUpdate}
+                onClick={startEditing}
               >
-                Save Changes
+                Edit Goal
               </Button>
-            </>
-          )}
-        </div>
+            </ActivityGuard>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={handleDelete}
+            >
+              Delete Goal
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setIsEditing(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={handleUpdate}
+            >
+              Save Changes
+            </Button>
+          </>
+        )}
+      </div>
 
-        {/* Actions - desktop view */}
-        <div className="hidden md:flex md:gap-2">
-          {!isEditing ? (
-            <>
-              <ActivityGuard action="edit" type="goal">
-                <Button
-                  onClick={() => setIsEditing(true)}
-                >
-                  Edit Goal
-                </Button>
-              </ActivityGuard>
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-              >
-                Delete Goal
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleUpdate}
-              >
-                Save Changes
-              </Button>
-            </>
-          )}
+      {/* Title Edit Box */}
+      {isEditing && (
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm mb-6">
+          <div className="p-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="goal-title" className="text-base font-semibold">Goal Title</Label>
+                <Input
+                  id="goal-title"
+                  value={formData.goal_title || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, goal_title: e.target.value })
+                  }
+                  placeholder="Enter goal title"
+                  className="mt-2"
+                />
+                {formData.goal_title?.trim() === '' && (
+                  <p className="text-sm text-red-500 mt-1">Title is required</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* Title row */}
+      <div className="flex flex-col mt-4 md:mt-0">
+        {!isEditing ? (
+          <h2 className="text-2xl font-bold text-gray-900">{goal.goal_title}</h2>
+        ) : null}
       </div>
 
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm">

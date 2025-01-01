@@ -29,6 +29,7 @@ const getEffortLevelColor = (level: number) => {
 
 export function NewGoalDialog({ open, onOpenChange, onGoalCreated }: NewGoalDialogProps) {
   const [formData, setFormData] = useState({
+    goal_title: "",
     goal_description: "",
     goal_type: "",
     target_date: "",
@@ -38,6 +39,11 @@ export function NewGoalDialog({ open, onOpenChange, onGoalCreated }: NewGoalDial
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.goal_title.trim()) {
+      toast.error("Goal title is required");
+      return;
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -60,6 +66,7 @@ export function NewGoalDialog({ open, onOpenChange, onGoalCreated }: NewGoalDial
       toast.success("Goal created successfully");
       onGoalCreated();
       setFormData({
+        goal_title: "",
         goal_description: "",
         goal_type: "",
         target_date: "",
@@ -77,6 +84,17 @@ export function NewGoalDialog({ open, onOpenChange, onGoalCreated }: NewGoalDial
           <DialogTitle>Create New Goal</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label>Title</Label>
+            <Input
+              value={formData.goal_title}
+              onChange={(e) =>
+                setFormData({ ...formData, goal_title: e.target.value })
+              }
+              placeholder="Enter goal title"
+              required
+            />
+          </div>
           <div>
             <Label>Description</Label>
             <Textarea
