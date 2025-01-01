@@ -203,6 +203,7 @@ type Goal = {
   goal_id: string;
   user_id: string;
   goal_description: string;
+  goal_title: string;        // Required field for goal title
   goal_type?: string;
   target_date?: string;
   milestones?: { count: number }[];
@@ -214,6 +215,7 @@ type Goal = {
   effort_level: number;
   is_completed: boolean;
   review_needed?: boolean;
+  review_previous_goal?: Partial<Goal>;
 };
 ```
 
@@ -754,25 +756,29 @@ create index idx_smartgoals_user_id on smartgoals(user_id);
 
 - **Form Fields**:
   1. Specific:
-     - Textarea
+     - Textarea component
      - Min height: 120px
-     - Resize: none
+     - Resizable vertically
      - Required field
+     - 5 rows default
   2. Measurable:
-     - Textarea
+     - Textarea component
      - Min height: 120px
-     - Resize: none
+     - Resizable vertically
      - Required field
+     - 5 rows default
   3. Achievable:
-     - Textarea
+     - Textarea component
      - Min height: 120px
-     - Resize: none
+     - Resizable vertically
      - Required field
+     - 5 rows default
   4. Relevant:
-     - Textarea
+     - Textarea component
      - Min height: 120px
-     - Resize: none
+     - Resizable vertically
      - Required field
+     - 5 rows default
   5. Time-bound:
      - Date input
      - Height: 40px (h-10)
@@ -1356,6 +1362,43 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 - Session validation in middleware
 - Environment variable checks
 
+## Type Safety and Build Error Prevention
+
+### Type Synchronization Guidelines
+1. When modifying type definitions:
+   - Update all related state types in components
+   - Check all useState hooks that use the modified type
+   - Ensure form data structures match the type definition
+   - Verify type consistency in any related components
+
+2. State Management Best Practices:
+   - Always define explicit types for useState hooks
+   - Avoid using partial types unless absolutely necessary
+   - Keep state types in sync with their corresponding model types
+   - When using setState with objects, ensure the object shape matches exactly
+
+3. Type Definition Changes Checklist:
+   ```typescript
+   // When updating a type (e.g., Goal):
+   - Update the base type definition (types/goal.ts)
+   - Update any state definitions using this type
+   - Update any form data structures
+   - Update any temporary state storage (like previousGoalData)
+   - Run type checking before committing changes: npm run type-check
+   ```
+
+4. Common Type-Related Build Issues:
+   - Property missing in state type but present in model type
+   - Inconsistent property names between state and model
+   - Missing properties in setState calls
+   - Incomplete type definitions in temporary state storage
+
+5. Prevention Strategy:
+   - Always run type checking before commits
+   - Keep type definitions centralized
+   - Maintain consistency between model and state types
+   - Document type dependencies in component comments
+
 ## Authentication Flow
 - **Login Page** (`/auth/login`):
   - Redirects to `/profile` if user is already logged in
@@ -1649,5 +1692,3 @@ create table
   ) tablespace pg_default;
 
 create index if not exists idx_userlogins_user_id on public.userlogins using btree (user_id) tablespace pg_default;
-```
-

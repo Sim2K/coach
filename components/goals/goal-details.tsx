@@ -66,6 +66,7 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
     progress: number;
     is_completed: boolean;
     effort_level: number;
+    goal_title: string;
   } | null>(null);
 
   useEffect(() => {

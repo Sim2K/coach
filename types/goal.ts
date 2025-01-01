@@ -2,6 +2,7 @@ export type Goal = {
   goal_id: string;
   user_id: string;
   goal_description: string;
+  goal_title: string;
   goal_type?: string;
   target_date?: string;
   milestones?: { count: number }[];
