@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { GOAL_TYPES } from "@/types/goal-type";
 
 interface NewGoalDialogProps {
   open: boolean;
@@ -88,9 +90,10 @@ export function NewGoalDialog({ open, onOpenChange, onGoalCreated }: NewGoalDial
           <DialogTitle>Create New Goal</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>Title</Label>
+          <div className="space-y-2">
+            <Label htmlFor="goal_title">Title</Label>
             <Input
+              id="goal_title"
               value={formData.goal_title}
               onChange={(e) =>
                 setFormData({ ...formData, goal_title: e.target.value })
@@ -99,9 +102,11 @@ export function NewGoalDialog({ open, onOpenChange, onGoalCreated }: NewGoalDial
               required
             />
           </div>
-          <div>
-            <Label>Description</Label>
+
+          <div className="space-y-2">
+            <Label htmlFor="goal_description">Description</Label>
             <Textarea
+              id="goal_description"
               value={formData.goal_description}
               onChange={(e) =>
                 setFormData({ ...formData, goal_description: e.target.value })
@@ -112,19 +117,28 @@ export function NewGoalDialog({ open, onOpenChange, onGoalCreated }: NewGoalDial
               rows={5}
             />
           </div>
-          <div>
-            <Label>Type</Label>
-            <Input
+          <div className="space-y-2">
+            <Label htmlFor="goal_type">Type</Label>
+            <Select
               value={formData.goal_type}
-              onChange={(e) =>
-                setFormData({ ...formData, goal_type: e.target.value })
-              }
-              placeholder="Enter goal type"
-            />
+              onValueChange={(value) => setFormData({ ...formData, goal_type: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select goal type" />
+              </SelectTrigger>
+              <SelectContent>
+                {GOAL_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div>
-            <Label>Target Date</Label>
+          <div className="space-y-2">
+            <Label htmlFor="target_date">Target Date</Label>
             <Input
+              id="target_date"
               type="date"
               value={formData.target_date}
               onChange={(e) =>
@@ -132,7 +146,7 @@ export function NewGoalDialog({ open, onOpenChange, onGoalCreated }: NewGoalDial
               }
             />
           </div>
-          <div>
+          <div className="space-y-2">
             <Label>Effort Level</Label>
             <div className="pt-2">
               <Slider

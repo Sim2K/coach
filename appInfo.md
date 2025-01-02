@@ -926,6 +926,108 @@ create index idx_smartgoals_user_id on smartgoals(user_id);
 
 ---
 
+## Goal Completion System
+
+### Complete Goal Feature
+1. Button Requirements:
+   - Located next to Delete Goal button
+   - Disabled if any milestones are incomplete
+   - Tooltip shows completion requirements
+   - Uses CheckCircle2 icon from lucide-react
+
+2. Completion Process:
+   - Confirmation dialog before proceeding
+   - Updates goal with:
+     ```typescript
+     {
+       progress: 100.00,
+       is_completed: true,
+       last_updated: new Date().toISOString(),
+       review_needed: true,
+       review_previous_goal: {...previousState} // If not under review
+     }
+     ```
+   - Triggers celebration animation
+   - Shows success toast
+   - Shows review notification if needed
+
+3. Milestone Validation:
+   - Tracks total and completed milestone counts
+   - Requires all milestones to be completed
+   - Updates counts when milestones change
+   - Disables button if validation fails
+
+### Celebration System
+1. Modular Celebration Function:
+   ```typescript
+   // lib/utils/celebration.ts
+   triggerCelebration(times?: number): Promise<void>
+   ```
+   - Takes optional number of bursts (2-5)
+   - Uses canvas-confetti library
+   - Customizable colors and patterns
+   - Async with delay between bursts
+
+2. Default Configuration:
+   ```typescript
+   {
+     spread: 360,
+     ticks: 100,
+     gravity: 0.5,
+     decay: 0.94,
+     startVelocity: 30,
+     shapes: ['star'],
+     colors: ['#FFD700', '#FFA500', '#FF4500', '#9370DB', '#4169E1']
+   }
+   ```
+
+3. Usage:
+   - Goal completion celebration
+   - Random number of bursts (2-5)
+   - 750ms delay between bursts
+   - Reusable for other achievements
+
+---
+
+## Goal List UI System
+
+### Date-Based Background Colors
+
+1. Color Logic:
+   ```typescript
+   // lib/utils/date-colors.ts
+   const colors = {
+     past: { default: "bg-red-50", selected: "bg-red-100" },
+     near: { default: "bg-orange-50", selected: "bg-orange-100" },
+     future: { default: "bg-white", selected: "bg-purple-50" }
+   }
+   ```
+
+2. Date Conditions:
+   - Past Due (Red): Target date < Current date
+   - Near Due (Orange): Target date within 10 days
+   - Future (White/Purple): Target date > 10 days away
+
+3. Implementation:
+   - Modular utility function in `date-colors.ts`
+   - Handles both selected and unselected states
+   - Integrates with existing selection UI
+   - Uses Tailwind CSS classes for consistency
+
+4. Visual Indicators:
+   - Target date displayed with calendar icon
+   - Tooltip shows "Goal target date"
+   - Smooth color transitions
+   - Maintains existing hover states
+
+5. State Handling:
+   - Preserves selection highlight logic
+   - Compatible with completion status
+   - Updates dynamically with date changes
+   - Fallback to default colors if no target date
+
+---
+
 ## Register Page UI
 - Left side panel contains Veedence logo (8x8 size) with text "Another Veedence.co.uk idea"
 - Removed avatar stack from bottom of left panel for cleaner UI
@@ -1449,26 +1551,59 @@ create table
 
 create index if not exists idx_userlogins_user_id on public.userlogins using btree (user_id) tablespace pg_default;
 
-```
+---
 
-Follow these instructions to make the following change to my code document.
+## Goal Type System
 
-Instruction: Update documentation with new record review notifications
+### Goal Type Options
+1. Available Types:
+   ```typescript
+   const GOAL_TYPES = ['Personal', 'Career', 'Professional'] as const;
+   ```
+   - Defined in `types/goal-type.ts`
+   - Used consistently across all goal forms
+   - Type-safe implementation using TypeScript
 
-Code Edit:
-```
-{{ ... }}
-5. Review Notifications:
-   - Toast notification appears in two scenarios:
-     1. When an existing record update is flagged for review
-     2. When a new goal or milestone is created
-   - Notification duration: 10 seconds
-   - Messages:
-     - For updates: "This [goal/milestone] update has been flagged for review with Ajay in your next AI session."
-     - For new records: "This new [goal/milestone] has been flagged for review with Ajay in your next AI session."
-   - Descriptions:
-     - For updates: "Changes will be discussed and reviewed during the session."
-     - For new records: "The [goal/milestone] will be discussed and reviewed during the session."
-   - All new goals and milestones are automatically set with `review_needed: true`
-   - For existing records, only shown when `review_needed` changes from `false` to `true`
-{{ ... }}
+2. UI Implementation:
+   - Dropdown select component
+   - Used in both new goal creation and goal editing
+   - Consistent styling with other form elements
+   - Clear placeholder text: "Select goal type"
+
+3. Form Integration:
+   - Required field in goal creation
+   - Editable in goal details when in edit mode
+   - Read-only display when not editing
+   - Maintains previous value during updates
+
+### Goal Refresh System
+
+1. Auto-refresh Implementation:
+   - Immediate refresh after any database operation
+   - Uses Supabase real-time updates
+   - Maintains UI consistency
+
+2. Refresh Triggers:
+   - Goal updates
+   - Goal completion
+   - Goal deletion
+   - Milestone changes affecting goal
+
+3. Refresh Process:
+   ```typescript
+   const refreshGoal = async (goalId) => {
+     const { data, error } = await supabase
+       .from("goals")
+       .select("*")
+       .eq("goal_id", goalId)
+       .single();
+     
+     if (data) onUpdate();
+   };
+   ```
+
+4. State Management:
+   - Centralized update handling
+   - Prevents stale data display
+   - Maintains data consistency
+   - Improves user experience

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, ChevronLeft, Maximize2, Minimize2, ChevronDown } from "lucide-react";
 import { CompletionDialog } from "@/components/ui/completion-dialog";
 import { toast } from "sonner";
@@ -20,6 +21,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Goal } from "@/types/goal";
 import { SmartGoalDetails } from "./smart-goal-details";
 import { ActivityGuard } from "@/lib/auth/activityGuard";
+import { triggerCelebration } from "@/lib/utils/celebration";
+import { GOAL_TYPES } from "@/types/goal-type";
 
 const getEffortLevelColor = (level: number) => {
   const colors = {
@@ -40,25 +43,24 @@ interface GoalDetailsProps {
   onBack?: () => void;
 }
 
-export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onBack }: GoalDetailsProps) {
+export function GoalDetails({ goal: initialGoal, onUpdate, onToggleMaximize, isMaximized, onBack }: GoalDetailsProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [goal, setGoal] = useState(initialGoal);
+  const [formData, setFormData] = useState({
+    goal_description: "",
+    goal_type: "",
+    target_date: "",
+    progress: 0,
+    effort_level: 3,
+    goal_title: ""
+  });
   const [counts, setCounts] = useState({
     milestones: goal.milestones?.[0]?.count ?? 0,
     updates: goal.updates?.[0]?.count ?? 0,
     engagements: goal.engagements?.[0]?.count ?? 0,
     feedback: goal.feedback?.[0]?.count ?? 0
   });
-  const [formData, setFormData] = useState({
-    goal_description: goal.goal_description,
-    goal_type: goal.goal_type || "",
-    target_date: goal.target_date || "",
-    progress: goal.progress || 0,
-    effort_level: goal.effort_level || 3,
-    is_completed: goal.is_completed || false,
-    goal_title: goal.goal_title || "",
-  });
-  const [isLoading, setIsLoading] = useState(false);
   const [previousGoalData, setPreviousGoalData] = useState<{
     goal_description: string;
     goal_type: string;
@@ -68,6 +70,12 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
     effort_level: number;
     goal_title: string;
   } | null>(null);
+  const [milestoneCount, setMilestoneCount] = useState({ total: 0, completed: 0 });
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+
+  useEffect(() => {
+    setGoal(initialGoal);
+  }, [initialGoal]);
 
   useEffect(() => {
     setFormData({
@@ -76,8 +84,7 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
       target_date: goal.target_date || "",
       progress: goal.progress || 0,
       effort_level: goal.effort_level || 3,
-      is_completed: goal.is_completed || false,
-      goal_title: goal.goal_title || "",
+      goal_title: goal.goal_title || ""
     });
   }, [goal]);
 
@@ -90,65 +97,158 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
     });
   }, [goal]);
 
+  useEffect(() => {
+    const fetchMilestoneCount = async () => {
+      try {
+        const { data: totalData, error: totalError } = await supabase
+          .from("milestones")
+          .select("milestone_id", { count: 'exact' })
+          .eq("goal_id", goal.goal_id);
+
+        const { data: completedData, error: completedError } = await supabase
+          .from("milestones")
+          .select("milestone_id", { count: 'exact' })
+          .eq("goal_id", goal.goal_id)
+          .eq("achieved", true);
+
+        if (totalError || completedError) throw totalError || completedError;
+
+        setMilestoneCount({
+          total: totalData?.length || 0,
+          completed: completedData?.length || 0
+        });
+      } catch (error: any) {
+        console.error("Error fetching milestone counts:", error);
+      }
+    };
+
+    fetchMilestoneCount();
+  }, [goal.goal_id]);
+
+  const refreshGoalData = async () => {
+    try {
+      const { data: updatedGoal, error } = await supabase
+        .from("goals")
+        .select("*")
+        .eq("goal_id", goal.goal_id)
+        .single();
+        
+      if (error) throw error;
+      if (updatedGoal) {
+        setGoal(updatedGoal);
+        onUpdate();
+      }
+    } catch (error: any) {
+      console.error("Error refreshing goal:", error);
+    }
+  };
+
   const handleComplete = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { error: goalError } = await supabase
+      const { error } = await supabase
         .from("goals")
-        .update({
-          is_completed: true,
-          progress: 100,
-          review_needed: true,
-        })
+        .update(formData)
         .eq("goal_id", goal.goal_id);
 
-      if (goalError) throw goalError;
+      if (error) throw error;
+      toast.success("Goal updated successfully");
+      await refreshGoalData();
+      setIsEditing(false);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [formData, goal.goal_id]);
 
-      const { error: milestonesError } = await supabase
-        .from("milestones")
-        .update({
-          achieved: true,
-          achievement_date: new Date().toISOString(),
-          review_needed: true,
-        })
+  const handleDelete = useCallback(async () => {
+    if (!window.confirm("Are you sure you want to delete this goal?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("goals")
+        .delete()
         .eq("goal_id", goal.goal_id);
 
-      if (milestonesError) throw milestonesError;
-
+      if (error) throw error;
+      toast.success("Goal deleted successfully");
       onUpdate();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }, [goal.goal_id, onUpdate]);
+
+  const handleCompleteGoal = async () => {
+    if (milestoneCount.total > 0 && milestoneCount.completed < milestoneCount.total) {
+      toast.error("All milestones must be completed before completing the goal");
+      return;
+    }
+
+    const confirmation = window.confirm("Are you sure you want to mark this goal as complete?");
+    if (!confirmation) return;
+
+    setIsLoading(true);
+    try {
+      const updatePayload: any = {
+        progress: 100.00,
+        is_completed: true,
+        last_updated: new Date().toISOString(),
+        review_needed: true,
+      };
+
+      if (!goal.review_needed) {
+        updatePayload.review_previous_goal = {
+          goal_description: goal.goal_description,
+          goal_type: goal.goal_type || "",
+          target_date: goal.target_date || "",
+          progress: goal.progress || 0,
+          effort_level: goal.effort_level || 3,
+          is_completed: goal.is_completed || false,
+          goal_title: goal.goal_title || "",
+        };
+      }
+
+      const { error } = await supabase
+        .from("goals")
+        .update(updatePayload)
+        .eq("goal_id", goal.goal_id);
+
+      if (error) throw error;
+
+      await refreshGoalData();
+
+      const randomTimes = Math.floor(Math.random() * 4) + 2;
+      await triggerCelebration(randomTimes);
+
       toast.success("Goal completed successfully!");
+      if (!goal.review_needed) {
+        toast.info("This goal completion has been flagged for review with Ajay in your next AI session.", {
+          duration: 10000,
+          description: "The completion will be discussed and reviewed during the session."
+        });
+      }
     } catch (error: any) {
       toast.error(error.message || "Error completing goal");
     } finally {
       setIsLoading(false);
-      setShowCompletionDialog(false);
     }
-  }, [goal.goal_id, onUpdate]);
+  };
 
   const handleUpdate = useCallback(async () => {
     if (!formData.goal_description.trim()) {
-      toast.error("Description cannot be empty");
-      return;
-    }
-
-    if (!formData.goal_title.trim()) {
-      toast.error("Title cannot be empty");
+      toast.error("Goal description is required");
       return;
     }
 
     setIsLoading(true);
     try {
-      let updatePayload: any = {
-        goal_description: formData.goal_description,
-        goal_type: formData.goal_type,
-        target_date: formData.target_date,
-        progress: formData.progress,
-        effort_level: formData.effort_level,
-        goal_title: formData.goal_title,
+      const updatePayload: any = {
+        ...formData,
+        last_updated: new Date().toISOString(),
       };
 
-      // Only store backup if review_needed is false
-      if (!goal.review_needed && previousGoalData) {
+      if (!goal.review_needed) {
         updatePayload.review_previous_goal = previousGoalData;
         updatePayload.review_needed = true;
         toast.info("This goal update has been flagged for review with Ajay in your next AI session.", {
@@ -164,38 +264,15 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
 
       if (error) throw error;
 
+      await refreshGoalData();
       setIsEditing(false);
-      onUpdate();
-      setPreviousGoalData(null);
       toast.success("Goal updated successfully");
     } catch (error: any) {
-      toast.error(error.message || "Error updating goal");
+      toast.error(error.message);
     } finally {
       setIsLoading(false);
     }
-  }, [formData, goal, onUpdate, previousGoalData]);
-
-  const handleDelete = useCallback(async () => {
-    const confirmation = window.confirm("Are you sure you want to delete this goal?");
-    if (!confirmation) return;
-
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from("goals")
-        .delete()
-        .eq("goal_id", goal.goal_id);
-
-      if (error) throw error;
-
-      onUpdate();
-      toast.success("Goal deleted successfully");
-    } catch (error: any) {
-      toast.error(error.message || "Error deleting goal");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [goal.goal_id, onUpdate]);
+  }, [formData, goal, previousGoalData]);
 
   const startEditing = () => {
     // Capture current state before editing
@@ -241,6 +318,27 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
                   Edit Goal
                 </Button>
               </ActivityGuard>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button
+                        variant="outline"
+                        onClick={handleCompleteGoal}
+                        disabled={milestoneCount.total > 0 && milestoneCount.completed < milestoneCount.total}
+                      >
+                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                        Complete Goal
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {milestoneCount.total > 0 && milestoneCount.completed < milestoneCount.total
+                      ? "All milestones must be completed before completing the goal"
+                      : "Mark this goal as complete"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <Button
                 variant="destructive"
                 onClick={handleDelete}
@@ -291,6 +389,28 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
                 Edit Goal
               </Button>
             </ActivityGuard>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={handleCompleteGoal}
+                      disabled={milestoneCount.total > 0 && milestoneCount.completed < milestoneCount.total}
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Complete Goal
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {milestoneCount.total > 0 && milestoneCount.completed < milestoneCount.total
+                    ? "All milestones must be completed before completing the goal"
+                    : "Mark this goal as complete"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Button
               variant="destructive"
               className="flex-1"
@@ -323,20 +443,29 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
         <div className="rounded-lg border bg-card text-card-foreground shadow-sm mb-6">
           <div className="p-6">
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="goal-title" className="text-base font-semibold">Goal Title</Label>
+              <div className="space-y-2">
+                <Label htmlFor="goal_title">Title</Label>
                 <Input
-                  id="goal-title"
-                  value={formData.goal_title || ''}
+                  id="goal_title"
+                  value={formData.goal_title}
                   onChange={(e) =>
                     setFormData({ ...formData, goal_title: e.target.value })
                   }
-                  placeholder="Enter goal title"
-                  className="mt-2"
+                  disabled={!isEditing || isLoading}
                 />
-                {formData.goal_title?.trim() === '' && (
-                  <p className="text-sm text-red-500 mt-1">Title is required</p>
-                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="goal_description">Description</Label>
+                <Textarea
+                  id="goal_description"
+                  value={formData.goal_description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, goal_description: e.target.value })
+                  }
+                  disabled={!isEditing || isLoading}
+                  rows={5}
+                />
               </div>
             </div>
           </div>
@@ -354,10 +483,10 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
         <div className="p-6 relative">
           {/* Existing Goal Details Content */}
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="goal-description">Description</Label>
+            <div className="space-y-2">
+              <Label htmlFor="goal_description">Description</Label>
               <Textarea
-                id="goal-description"
+                id="goal_description"
                 value={formData.goal_description}
                 onChange={(e) =>
                   setFormData({ ...formData, goal_description: e.target.value })
@@ -369,19 +498,34 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
             </div>
 
             <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
-              <div>
-                <Label htmlFor="goal-type">Type</Label>
-                <Input
-                  id="goal-type"
-                  value={formData.goal_type}
-                  onChange={(e) =>
-                    setFormData({ ...formData, goal_type: e.target.value })
-                  }
-                  disabled={!isEditing || isLoading}
-                />
+              <div className="space-y-2">
+                <Label htmlFor="goal_type">Type</Label>
+                {isEditing ? (
+                  <Select
+                    value={formData.goal_type || ""}
+                    onValueChange={(value) => setFormData({ ...formData, goal_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select goal type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GOAL_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="goal_type"
+                    value={goal.goal_type || ""}
+                    disabled
+                  />
+                )}
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="target-date">Target Date</Label>
                 <Input
                   id="target-date"

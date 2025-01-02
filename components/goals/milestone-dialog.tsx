@@ -162,33 +162,32 @@ export function MilestoneDialog({
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="milestone-description">Description</Label>
+          <div className="space-y-2">
+            <Label htmlFor="milestone_description">Description</Label>
             <Textarea
-              id="milestone-description"
+              id="milestone_description"
               value={formData.milestone_description}
               onChange={(e) =>
                 setFormData({ ...formData, milestone_description: e.target.value })
               }
               placeholder="Enter milestone description"
-              required
-              className="min-h-[120px] resize-y"
-              rows={5}
+              rows={3}
             />
           </div>
-          <div>
-            <Label htmlFor="target-date">Target Date</Label>
+
+          <div className="space-y-2">
+            <Label htmlFor="target_date">Target Date</Label>
             <Input
-              id="target-date"
+              id="target_date"
               type="date"
               value={formData.target_date}
               onChange={(e) =>
                 setFormData({ ...formData, target_date: e.target.value })
               }
-              required
             />
           </div>
-          <div className="flex items-center justify-between">
+
+          <div className="space-y-2">
             <Label htmlFor="achieved">Achieved</Label>
             <Switch
               id="achieved"
@@ -203,10 +202,10 @@ export function MilestoneDialog({
             />
           </div>
           {formData.achieved && (
-            <div>
-              <Label htmlFor="achievement-date">Achievement Date</Label>
+            <div className="space-y-2">
+              <Label htmlFor="achievement_date">Achievement Date</Label>
               <Input
-                id="achievement-date"
+                id="achievement_date"
                 type="date"
                 value={formData.achievement_date?.split("T")[0] || ""}
                 onChange={(e) =>
