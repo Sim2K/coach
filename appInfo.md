@@ -348,6 +348,13 @@ This documentation will be updated as new features are added or existing ones ar
    - When backup is stored, record is marked for review
    - Backup is stored as a partial type of the original record
 
+5. Review Notifications:
+   - Toast notification appears when an update is flagged for review
+   - Notification duration: 10 seconds
+   - Message: "This [goal/milestone] update has been flagged for review with Ajay in your next AI session."
+   - Description: "Changes will be discussed and reviewed during the session."
+   - Only shown when `review_needed` changes from `false` to `true`
+
 ---
 
 ## Recent Updates (2024-12-31)
@@ -1609,7 +1616,7 @@ create table
   ) tablespace pg_default;
 
 create index if not exists idx_framework_name on public.frameworks using btree (name) tablespace pg_default;      
-``` 
+```
 
 ### framework_levels Table (`framework_levels`)
 ```sql

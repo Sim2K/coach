@@ -151,6 +151,10 @@ export function GoalDetails({ goal, onUpdate, onToggleMaximize, isMaximized, onB
       if (!goal.review_needed && previousGoalData) {
         updatePayload.review_previous_goal = previousGoalData;
         updatePayload.review_needed = true;
+        toast.info("This goal update has been flagged for review with Ajay in your next AI session.", {
+          duration: 10000,
+          description: "Changes will be discussed and reviewed during the session."
+        });
       }
 
       const { error } = await supabase

@@ -98,6 +98,10 @@ export function MilestoneDialog({
         if (!milestone.review_needed && previousMilestoneData) {
           updatePayload.review_previous_milestone = previousMilestoneData;
           updatePayload.review_needed = true;
+          toast.info("This milestone update has been flagged for review with Ajay in your next AI session.", {
+            duration: 10000,
+            description: "Changes will be discussed and reviewed during the session."
+          });
         }
 
         const { error: updateError } = await supabase
