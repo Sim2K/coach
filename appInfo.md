@@ -23,292 +23,6 @@ This document serves as a comprehensive reference for the Pro UI application arc
 
 ---
 
-## Navigation
-
-### Menu System Overview
-The application uses a responsive menu system implemented across two main components:
-- Desktop: Sidebar (`components/sidebar.tsx`)
-- Mobile: MobileMenu (`components/mobile-menu.tsx`)
-
-#### Core Components
-- **Sidebar**: Fixed desktop navigation
-- **MobileMenu**: Responsive mobile navigation with overlay
-- **Icons**: Imported from lucide-react library
-- **UI Components**: Button from custom UI library
-
-#### Menu Architecture
-
-##### Desktop Sidebar
-- Fixed width: w-64 (16rem)
-- Position: Left side, full height (min-h-screen)
-- Background: White with right border (bg-white border-r border-gray-200)
-- Structure:
-  1. Header Section (p-4)
-     - Logo with Crosshair icon
-     - App title
-  2. Navigation Section
-     - Scrollable menu items (space-y-1 pb-20)
-     - Items mapped from menuItems array
-  3. Bottom Section (fixed)
-     - Special styling and positioning
-     - Contains external links and logout
-
-##### Mobile Menu
-- Trigger: Hamburger menu button in top bar
-- Full screen overlay with blur effect
-- Structure:
-  1. Top Bar (h-16)
-     - Menu toggle button
-     - Logo
-  2. Overlay Menu
-     - White background with blur (bg-white/95 backdrop-blur-sm)
-     - Slide/fade transition
-     - Full screen (fixed inset-0)
-  3. Content Structure
-     - Header with logo and close button
-     - Scrollable menu items
-     - Bottom section with special items
-
-#### Menu Items Implementation
-```typescript
-const menuItems = [
-  { name: "Profile", href: "/profile", Icon: UserIcon },
-  { name: "Update Key", href: "/update-key", Icon: Key },
-  { name: "Goals", href: "/goals", Icon: Target },
-  { name: "Frameworks", href: "/soon-come", Icon: Crosshair },
-  { name: "Settings", href: "/settings", Icon: Settings },
-  { name: "Updates", href: "/updates", Icon: Bell },
-  { name: "Preferences", href: "/soon-come", Icon: Heart }
-]
-```
-
-#### Special Bottom Section
-This section is styled and structured differently from regular menu items:
-
-1. **Let's talk! Link** (Added 2024-12-22)
-   - External link to https://GPTs4u.com/lifecoach
-   - Opens in new tab (target="_blank")
-   - Security attribute: rel="noopener noreferrer"
-   - Purple theme styling:
-     - Desktop: text-purple-600 hover:text-purple-700 hover:bg-purple-50
-     - Mobile: Similar styling with adjusted padding
-   - MessageSquare icon
-   - Positioned above logout
-
-2. **Logout Button**
-   - Distinct red styling (text-red-600)
-   - Red hover states (hover:text-red-700 hover:bg-red-50)
-   - LogOut icon from lucide-react
-   - Handles authentication logout via supabase
-   - Programmatic navigation to login page
-
-#### Styling Details
-- **Regular Menu Items**
-  - Active state: bg-purple-50 text-purple-600
-  - Inactive state: text-gray-700 hover:bg-gray-50
-  - Rounded corners: rounded-lg
-  - Consistent padding: px-4 py-3
-  - Icon + text layout with flex
-
-- **Bottom Section**
-  - Fixed positioning
-  - Top border: border-t border-gray-200
-  - White background
-  - Full width of sidebar (w-64)
-  - Consistent padding (p-4)
-
-#### State Management
-- Uses Next.js usePathname() for active route highlighting
-- Mobile menu uses local state (useState) for open/close
-- Authentication state handled through Supabase
-
-#### Navigation Implementation
-- Regular items: Next.js Link component for client-side routing
-- External links: Standard a tags with security attributes
-- Programmatic navigation: Next.js useRouter() for auth flows
-
-#### Dependencies
-- Icons: lucide-react
-- Routing: next/navigation (usePathname, useRouter)
-- UI Components: Custom Button component
-- Authentication: Supabase client
-- Notifications: Sonner toast
-
----
-
-## Application Structure (Last Updated: 2024-12-25)
-
-### 1. Navigation and Menu Structure
-- **Main Menu Items**:
-  ```typescript
-  [
-    { name: "Profile", href: "/profile", Icon: UserIcon },
-    { name: "Update Key", href: "/update-key", Icon: Key },
-    { name: "Goals", href: "/goals", Icon: Target },
-    { name: "Frameworks", href: "/soon-come", Icon: Crosshair },
-    { name: "Settings", href: "/settings", Icon: Settings },
-    { name: "Updates", href: "/updates", Icon: Bell },
-    { name: "Preferences", href: "/soon-come", Icon: Heart }
-  ]
-  ```
-- **Menu Implementation**:
-  - Single source of truth in `sidebar.tsx`
-  - Shared between desktop sidebar and mobile menu
-  - Mobile menu imports menu items from sidebar component
-  - Responsive design: Hidden on mobile (md:flex for desktop)
-
-### 2. Goals System Architecture
-
-#### Database Schema
-- **Goals Table**:
-  ```sql
-  goals (
-    goal_id: uuid PRIMARY KEY,
-    user_id: uuid REFERENCES auth.users,
-    goal_description: text,
-    goal_type: text,
-    progress: integer,
-    effort_level: integer,
-    is_completed: boolean,
-    review_needed: boolean
-  )
-  ```
-
-#### Goals Page Structure
-- **Main Components**:
-  1. GoalsList (Left Panel - 1/3 width on desktop)
-  2. GoalDetails (Right Panel - 2/3 width on desktop)
-  3. SmartGoalDetails (Nested in GoalDetails)
-
-#### Data Fetching Pattern
-- **Initial Goals Query**:
-  ```typescript
-  const { data } = await supabase
-    .from("goals")
-    .select(`
-      *,
-      milestones:milestones(count),
-      updates:updates(count),
-      engagements:engagement(count),
-      feedback:feedback(count)
-    `)
-    .eq("user_id", session.user.id);
-  ```
-- Efficient count aggregation using subqueries
-- Counts available immediately in both list and detail views
-
-#### Goal Type Definition
-```typescript
-type Goal = {
-  goal_id: string;
-  user_id: string;
-  goal_description: string;
-  goal_title: string;        // Required field for goal title
-  goal_type?: string;
-  target_date?: string;
-  milestones?: { count: number }[];
-  updates?: { count: number }[];
-  engagements?: { count: number }[];
-  feedback?: { count: number }[];
-  count?: number;
-  progress: number;
-  effort_level: number;
-  is_completed: boolean;
-  review_needed?: boolean;
-  review_previous_goal?: Partial<Goal>;
-};
-```
-
-### 3. SMART Goals Framework
-
-#### SmartGoal Type Definition
-```typescript
-interface SmartGoal {
-  smart_id: string;
-  specific: string | null;
-  measurable: string | null;
-  achievable: string | null;
-  relevant: string | null;
-  time_bound?: string | null;  // Optional, not shown in UI
-  smart_progress: number;
-  status: 'Pending' | 'In Progress' | 'Completed' | 'On Hold';
-}
-```
-
-#### UI Components Structure
-1. **Smart Goal Dialog**:
-   - Form fields:
-     - Specific (textarea)
-     - Measurable (textarea)
-     - Achievable (textarea)
-     - Relevant (textarea)
-     - Progress (slider)
-     - Status (select)
-
-2. **Smart Goal Details Display**:
-   - Progress section (full width)
-   - SMART criteria sections in grid layout
-   - Status badge with color coding
-
-#### Status Color Scheme
-```typescript
-const statusColors = {
-  'Pending': 'bg-yellow-100 text-yellow-800',
-  'In Progress': 'bg-blue-100 text-blue-800',
-  'Completed': 'bg-green-100 text-green-800',
-  'On Hold': 'bg-gray-100 text-gray-800'
-};
-```
-
-### 4. Responsive Design Structure
-
-#### Desktop Layout
-- Sidebar: Fixed width (w-64)
-- Goals List: 1/3 width (w-1/3)
-- Goal Details: 2/3 width (w-2/3)
-- Maximize/Minimize capability for details panel
-
-#### Mobile Layout
-- Full-width design
-- Toggle between list and details view
-- Back button for navigation
-- Hamburger menu for main navigation
-- Sticky headers
-
-### 5. State Management
-- React useState for local component state
-- Props drilling for component communication
-- Supabase real-time updates not implemented
-- Manual refetch patterns for data updates
-
-### 6. Error Handling
-- Toast notifications for user feedback
-- Error boundaries not implemented
-- Try-catch blocks in async operations
-- Fallback UI for loading states
-
-### 7. Performance Optimizations
-- Efficient count queries using subqueries
-- Lazy loading of details components
-- Optimized re-renders using proper state management
-- Responsive image loading
-
-### 8. Security Measures
-- Supabase RLS policies
-- User session validation
-- Protected routes
-- Secure API endpoints
-
-### 9. Accessibility Features
-- ARIA labels
-- Keyboard navigation
-- Color contrast compliance
-- Screen reader support
-
-This documentation will be updated as new features are added or existing ones are modified.
-
----
-
 ## Record Backup System
 
 ### Goals and Milestones Backup
@@ -349,11 +63,18 @@ This documentation will be updated as new features are added or existing ones ar
    - Backup is stored as a partial type of the original record
 
 5. Review Notifications:
-   - Toast notification appears when an update is flagged for review
+   - Toast notification appears in two scenarios:
+     1. When an existing record update is flagged for review
+     2. When a new goal or milestone is created
    - Notification duration: 10 seconds
-   - Message: "This [goal/milestone] update has been flagged for review with Ajay in your next AI session."
-   - Description: "Changes will be discussed and reviewed during the session."
-   - Only shown when `review_needed` changes from `false` to `true`
+   - Messages:
+     - For updates: "This [goal/milestone] update has been flagged for review with Ajay in your next AI session."
+     - For new records: "This new [goal/milestone] has been flagged for review with Ajay in your next AI session."
+   - Descriptions:
+     - For updates: "Changes will be discussed and reviewed during the session."
+     - For new records: "The [goal/milestone] will be discussed and reviewed during the session."
+   - All new goals and milestones are automatically set with `review_needed: true`
+   - For existing records, only shown when `review_needed` changes from `false` to `true`
 
 ---
 
@@ -1727,3 +1448,27 @@ create table
   ) tablespace pg_default;
 
 create index if not exists idx_userlogins_user_id on public.userlogins using btree (user_id) tablespace pg_default;
+
+```
+
+Follow these instructions to make the following change to my code document.
+
+Instruction: Update documentation with new record review notifications
+
+Code Edit:
+```
+{{ ... }}
+5. Review Notifications:
+   - Toast notification appears in two scenarios:
+     1. When an existing record update is flagged for review
+     2. When a new goal or milestone is created
+   - Notification duration: 10 seconds
+   - Messages:
+     - For updates: "This [goal/milestone] update has been flagged for review with Ajay in your next AI session."
+     - For new records: "This new [goal/milestone] has been flagged for review with Ajay in your next AI session."
+   - Descriptions:
+     - For updates: "Changes will be discussed and reviewed during the session."
+     - For new records: "The [goal/milestone] will be discussed and reviewed during the session."
+   - All new goals and milestones are automatically set with `review_needed: true`
+   - For existing records, only shown when `review_needed` changes from `false` to `true`
+{{ ... }}

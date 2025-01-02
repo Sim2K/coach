@@ -64,6 +64,10 @@ export function NewGoalDialog({ open, onOpenChange, onGoalCreated }: NewGoalDial
       if (error) throw error;
 
       toast.success("Goal created successfully");
+      toast.info("This new goal has been flagged for review with Ajay in your next AI session.", {
+        duration: 10000,
+        description: "The goal will be discussed and reviewed during the session."
+      });
       onGoalCreated();
       setFormData({
         goal_title: "",

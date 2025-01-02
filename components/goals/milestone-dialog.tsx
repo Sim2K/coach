@@ -128,6 +128,10 @@ export function MilestoneDialog({
 
         if (error) throw error;
         toast.success("Milestone created successfully");
+        toast.info("This new milestone has been flagged for review with Ajay in your next AI session.", {
+          duration: 10000,
+          description: "The milestone will be discussed and reviewed during the session."
+        });
         if (onMilestoneAdded) onMilestoneAdded();
       }
 
