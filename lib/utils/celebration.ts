@@ -1,4 +1,5 @@
 import confetti from 'canvas-confetti';
+import type { Shape } from 'canvas-confetti';
 
 export const triggerCelebration = async (times: number = 3) => {
   const count = Math.min(Math.max(times, 2), 5); // Ensure between 2 and 5
@@ -8,7 +9,7 @@ export const triggerCelebration = async (times: number = 3) => {
     gravity: 0.5,
     decay: 0.94,
     startVelocity: 30,
-    shapes: ['star'],
+    shapes: ['star'] as Shape[],
     colors: ['#FFD700', '#FFA500', '#FF4500', '#9370DB', '#4169E1']
   };
 

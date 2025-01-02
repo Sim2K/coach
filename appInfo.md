@@ -744,6 +744,24 @@ create index idx_smartgoals_user_id on smartgoals(user_id);
 
 ---
 
+## Utils
+
+### Celebration Utility (`lib/utils/celebration.ts`)
+- Provides confetti animation functionality
+- Uses `canvas-confetti` library with proper type imports
+- Shapes are properly typed using `Shape[]` from canvas-confetti types
+- Default configuration:
+  - Star shape
+  - Multiple colors: Gold, Orange, Red-Orange, Purple, Royal Blue
+  - Customizable particle count and animation parameters
+
+### Type Fix for Celebration Utility
+- Fixed type issue with `triggerCelebration` function
+- Added type annotations for `confetti` function
+- Ensured type consistency with `canvas-confetti` library
+
+---
+
 ## Goal and Milestone Dialogs
 
 ### New Goal Dialog
