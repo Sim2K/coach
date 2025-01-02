@@ -1002,6 +1002,9 @@ create index idx_smartgoals_user_id on smartgoals(user_id);
      future: { default: "bg-white", selected: "bg-purple-50" }
    }
    ```
+   - Defined in `date-colors.ts`
+   - Used consistently across all goal forms
+   - Type-safe implementation using TypeScript
 
 2. Date Conditions:
    - Past Due (Red): Target date < Current date
@@ -1607,3 +1610,18 @@ create index if not exists idx_userlogins_user_id on public.userlogins using btr
    - Prevents stale data display
    - Maintains data consistency
    - Improves user experience
+
+---
+
+## Milestone Completion Celebration
+- Confetti animation triggers when a milestone is completed
+- Uses the same `triggerCelebration` utility as goal completion
+- Random number of confetti bursts (2-5 times)
+- Configuration:
+  - Spread: 360 degrees
+  - Star-shaped particles
+  - Colors: Gold, Orange, Red-Orange, Purple, Royal Blue
+  - Gravity and decay effects for natural animation
+  - Particles originate from random positions
+  - 40 particles per burst
+  - 750ms delay between bursts

@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Milestone } from "@/types/milestone";
 import { cn } from "@/lib/utils";
+import { triggerCelebration } from "@/lib/utils/celebration";
 import { ActivityGuard } from "@/lib/auth/activityGuard";
 
 interface MilestonesListProps {
@@ -82,6 +83,11 @@ export function MilestonesList({ goalId, goalTargetDate }: MilestonesListProps) 
       if (error) throw error;
       fetchMilestones();
       setShowCompletionDialog(false); // Close the dialog after success
+
+      // Trigger confetti celebration
+      const randomTimes = Math.floor(Math.random() * 4) + 2;
+      await triggerCelebration(randomTimes);
+
       toast.success("Milestone completed!");
     } catch (error: any) {
       toast.error(error.message || "Error completing milestone");
