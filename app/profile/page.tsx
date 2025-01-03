@@ -266,9 +266,9 @@ export default function ProfilePage() {
                             <SelectValue placeholder="Select coaching style" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="directive">Directive</SelectItem>
-                            <SelectItem value="supportive">Supportive</SelectItem>
-                            <SelectItem value="collaborative">Collaborative</SelectItem>
+                            <SelectItem value="Direct">Direct</SelectItem>
+                            <SelectItem value="Supportive">Supportive</SelectItem>
+                            <SelectItem value="Collaborative">Collaborative</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
