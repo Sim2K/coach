@@ -744,6 +744,26 @@ create index idx_smartgoals_user_id on smartgoals(user_id);
 
 ---
 
+## Code Cleanup History
+
+### 2025-01-05: Removed Legacy Stripe Integration
+1. **Files Removed**:
+   - `lib/config/environment.ts` - Unused Stripe configuration
+   - `types/stripe.ts` - Unused Stripe type definitions
+   
+2. **Reason for Removal**:
+   - Files were remnants of an unused/incomplete Stripe integration
+   - No active references to these files in the codebase
+   - All related environment variables were already commented out
+   - Referenced a different domain (coach.veedence.com) in returnUrl
+
+3. **Verification**:
+   - Confirmed no active imports of these files
+   - Confirmed no active usage of Stripe-related types
+   - All Stripe environment variables were already commented out in `.env.local`
+
+---
+
 ## Utils
 
 ### Celebration Utility (`lib/utils/celebration.ts`)
@@ -1001,7 +1021,7 @@ create index idx_smartgoals_user_id on smartgoals(user_id);
 
 3. Usage:
    - Goal completion celebration
-   - Random number of bursts (2-5)
+   - Random number of bursts (2-5 times)
    - 750ms delay between bursts
    - Reusable for other achievements
 
@@ -1571,6 +1591,574 @@ create table
   ) tablespace pg_default;
 
 create index if not exists idx_userlogins_user_id on public.userlogins using btree (user_id) tablespace pg_default;
+```
+
+### users Table (`auth.users`)
+```sql
+create table
+  auth.users (
+    instance_id uuid null,
+    id uuid not null,
+    aud character varying(255) null,
+    role character varying(255) null,
+    email character varying(255) null,
+    encrypted_password character varying(255) null,
+    email_confirmed_at timestamp with time zone null,
+    invited_at timestamp with time zone null,
+    confirmation_token character varying(255) null,
+    confirmation_sent_at timestamp with time zone null,
+    recovery_token character varying(255) null,
+    recovery_sent_at timestamp with time zone null,
+    email_change_token_new character varying(255) null,
+    email_change character varying(255) null,
+    email_change_sent_at timestamp with time zone null,
+    last_sign_in_at timestamp with time zone null,
+    raw_app_meta_data jsonb null,
+    raw_user_meta_data jsonb null,
+    is_super_admin boolean null,
+    created_at timestamp with time zone null,
+    updated_at timestamp with time zone null,
+    phone text null default null::character varying,
+    phone_confirmed_at timestamp with time zone null,
+    phone_change text null default ''::character varying,
+    phone_change_token character varying(255) null default ''::character varying,
+    phone_change_sent_at timestamp with time zone null,
+    confirmed_at timestamp with time zone generated always as (least(email_confirmed_at, phone_confirmed_at)) stored null,
+    email_change_token_current character varying(255) null default ''::character varying,
+    email_change_confirm_status smallint null default 0,
+    banned_until timestamp with time zone null,
+    reauthentication_token character varying(255) null default ''::character varying,
+    reauthentication_sent_at timestamp with time zone null,
+    is_sso_user boolean not null default false,
+    deleted_at timestamp with time zone null,
+    is_anonymous boolean not null default false,
+    constraint users_pkey primary key (id),
+    constraint users_phone_key unique (phone),
+    constraint users_email_change_confirm_status_check check (
+      (
+        (email_change_confirm_status >= 0)
+        and (email_change_confirm_status <= 2)
+      )
+    )
+  ) tablespace pg_default;
+
+create index if not exists users_instance_id_idx on auth.users using btree (instance_id) tablespace pg_default;
+
+create index if not exists users_instance_id_email_idx on auth.users using btree (instance_id, lower((email)::text)) tablespace pg_default;
+
+create unique index if not exists confirmation_token_idx on auth.users using btree (confirmation_token) tablespace pg_default
+where
+  ((confirmation_token)::text !~ '^[0-9 ]*$'::text);
+
+create unique index if not exists recovery_token_idx on auth.users using btree (recovery_token) tablespace pg_default
+where
+  ((recovery_token)::text !~ '^[0-9 ]*$'::text);
+
+create unique index if not exists email_change_token_current_idx on auth.users using btree (email_change_token_current) tablespace pg_default
+where
+  (
+    (email_change_token_current)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists email_change_token_new_idx on auth.users using btree (email_change_token_new) tablespace pg_default
+where
+  (
+    (email_change_token_new)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists reauthentication_token_idx on auth.users using btree (reauthentication_token) tablespace pg_default
+where
+  (
+    (reauthentication_token)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists users_email_partial_key on auth.users using btree (email) tablespace pg_default
+where
+  (is_sso_user = false);
+
+create index if not exists users_is_anonymous_idx on auth.users using btree (is_anonymous) tablespace pg_default;
+
+create trigger on_auth_user_created
+after insert on auth.users for each row
+execute function create_user_profile_v2 ();
+
+---
+
+## Authentication and Password Management
+
+### URL Configuration
+1. **Supabase URL Configuration (Required)**
+   - Required Setup: Configure redirect URLs in Supabase dashboard
+   - Path: `https://supabase.com/dashboard/project/{PROJECT_ID}/auth/url-configuration`
+   - Add your domain to the redirect URLs list
+   - Format: `http://your-domain.com/**`
+   - Note: Replace {PROJECT_ID} with your Supabase project ID
+   - This configuration is crucial for the password reset flow to work correctly
+
+2. **URL Handling**
+   - Utility: `url-utils.ts`
+   - Functions:
+     - `getBaseUrl()` - Dynamic base URL detection
+       - Browser: Uses `window.location.origin` (automatically gets current domain)
+       - Server: Falls back to localhost (server-side URL not needed for auth flows)
+     - `getAuthRedirectUrl()` - Generates full auth redirect URLs
+
+### Password Reset Flow
+1. **Forgot Password Flow**
+   - Route: `/auth/forgot-password`
+   - Component: `ForgotPasswordForm`
+   - Functionality: 
+     - Allows users to request a password reset via email
+     - Uses browser's current domain for redirects
+     - Non-authenticated route accessible to logged-out users
+
+2. **Password Reset Flow**
+   - Routes:
+     - `/auth/confirm` - Handles OTP verification
+     - `/auth/reset-password` - New password entry form
+     - `/auth/error` - Error handling page
+   - Components:
+     - `ResetPasswordForm`
+   - Implementation: 
+     - Uses Supabase PKCE flow for secure password reset
+     - Uses browser's current domain for redirects
+     - All routes are non-authenticated and accessible to logged-out users
+
+3. **Public Routes**
+   The following routes are accessible without authentication:
+   ```typescript
+   const publicRoutes = [
+     '/auth/login',
+     '/auth/register',
+     '/auth/forgot-password',
+     '/auth/reset-password',
+     '/auth/confirm',
+     '/auth/error',
+     '/',
+     '/api/stripe/webhook'
+   ];
+   ```
+
+### Important Setup Steps
+1. Configure Supabase URL Configuration:
+   - Access Supabase dashboard at: `https://supabase.com/dashboard/project/{PROJECT_ID}/auth/url-configuration`
+   - Add your domain to redirect URLs
+   - Format: `http://your-domain.com/**`
+   - This step is crucial for the password reset flow to work correctly
+
+2. Verify Middleware Configuration:
+   - Ensure all auth-related routes are listed in `publicRoutes`
+   - Check middleware.ts for proper route handling
+
+---
+
+## Type Safety and Build Error Prevention
+
+### Type Synchronization Guidelines
+1. When modifying type definitions:
+   - Update all related state types in components
+   - Check all useState hooks that use the modified type
+   - Ensure form data structures match the type definition
+   - Verify type consistency in any related components
+
+2. State Management Best Practices:
+   - Always define explicit types for useState hooks
+   - Avoid using partial types unless absolutely necessary
+   - Keep state types in sync with their corresponding model types
+   - When using setState with objects, ensure the object shape matches exactly
+
+3. Type Definition Changes Checklist:
+   ```typescript
+   // When updating a type (e.g., Goal):
+   - Update the base type definition (types/goal.ts)
+   - Update any state definitions using this type
+   - Update any form data structures
+   - Update any temporary state storage (like previousGoalData)
+   - Run type checking before committing changes: npm run type-check
+   ```
+
+4. Common Type-Related Build Issues:
+   - Property missing in state type but present in model type
+   - Inconsistent property names between state and model
+   - Missing properties in setState calls
+   - Incomplete type definitions in temporary state storage
+
+5. Prevention Strategy:
+   - Always run type checking before commits
+   - Keep type definitions centralized
+   - Maintain consistency between model and state types
+   - Document type dependencies in component comments
+
+## Authentication Flow
+- **Login Page** (`/auth/login`):
+  - Redirects to `/profile` if user is already logged in
+  - Contains links to register page for both mobile and desktop views
+  - Uses Supabase authentication
+
+- **Register Page** (`/auth/register`):
+  - Accessible whether logged in or not
+  - Registration form with fields:
+    - First Name
+    - Last Name
+    - Email
+    - Password
+    - Nickname
+    - Login Key
+  - Uses Supabase for user registration
+
+- **Auth Layout** (`/auth/layout.tsx`):
+  - Only redirects to profile if user is logged in AND on login page
+  - Allows access to register page regardless of authentication status
+
+## Database Table Structure
+
+### User Profile Table (`userprofile`)
+```sql
+create table
+  public.userprofile (
+    user_id uuid not null,
+    first_name text null,
+    last_name text null,
+    coaching_style_preference text null,
+    feedback_frequency text null,
+    privacy_settings jsonb null,
+    is_active boolean null default true,
+    last_logged_in timestamp with time zone null,
+    nick_name text null,
+    user_email text null,
+    induction_complete boolean null default false,
+    country text null,
+    city text null,
+    age numeric null,
+    gender text null,
+    last_donation timestamp with time zone null,
+    admin boolean null default false,
+    subscription_end_date date null default (now() + '30 days'::interval),
+    date_joined timestamp with time zone null default now(),
+    constraint userprofile_pkey primary key (user_id),
+    constraint userprofile_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+```
+
+### payments Table (`payments`)
+```sql
+create table
+  public.payments (
+    paymentid uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    issuccess boolean not null,
+    status text not null,
+    paymentstatus text not null,
+    paymentintentstatus text not null,
+    customeremail text not null,
+    amount numeric not null,
+    currency text not null,
+    paymenttype text not null,
+    timepaid timestamp without time zone null default (now() at time zone 'utc'::text),
+    stripepaymentid text null,
+    subsmonthcount numeric null default '1'::numeric,
+    subsenddate date null default (now() + '30 days'::interval),
+    constraint payments_pkey primary key (paymentid),
+    constraint payments_user_id_fkey foreign key (user_id) references userprofile (user_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_payments_user_id on public.payments using btree (user_id) tablespace pg_default;
+```
+
+### goals Table (`goals`)
+```sql
+create table
+  public.goals (
+    goal_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    goal_description text not null,
+    goal_type character varying(50) null,
+    created_at timestamp with time zone null default now(),
+    target_date date null,
+    progress numeric(5, 2) null default 0.00,
+    is_completed boolean null default false,
+    last_updated timestamp with time zone null default now(),
+    effort_level numeric null default '3'::numeric,
+    review_needed boolean null default false,
+    review_previous_goal jsonb null,
+    framework_id uuid null,
+    goal_title text null,
+    constraint goals_pkey primary key (goal_id),
+    constraint goals_framework_id_fkey foreign key (framework_id) references frameworks (framework_id) on delete cascade,
+    constraint goals_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_goals_user_id on public.goals using btree (user_id) tablespace pg_default;
+```
+
+### milestones Table (`milestones`)
+```sql
+create table
+  public.milestones (
+    milestone_id uuid not null default gen_random_uuid (),
+    goal_id uuid null,
+    milestone_description text not null,
+    target_date date null,
+    achieved boolean null default false,
+    achievement_date date null,
+    created_at timestamp with time zone null default now(),
+    last_updated timestamp with time zone null default now(),
+    review_needed boolean null default false,
+    review_previous_milestone jsonb null,
+    framework_level_id uuid null,
+    constraint milestones_pkey primary key (milestone_id),
+    constraint milestones_framework_level_id_fkey foreign key (framework_level_id) references framework_levels (level_id) on delete cascade,
+    constraint milestones_goal_id_fkey foreign key (goal_id) references goals (goal_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_milestones_goal_id on public.milestones using btree (goal_id) tablespace pg_default;
+```
+
+### smartgoals Table (`smartgoals`)
+```sql
+create table
+  public.smartgoals (
+    smart_id uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    goal_id uuid null,
+    specific text null,
+    measurable text null,
+    achievable text null,
+    relevant text null,
+    time_bound date null,
+    smart_progress numeric(5, 2) null default 0.00,
+    status text null default 'Pending',
+    created_at timestamp with time zone null default now(),
+    updated_at timestamp with time zone null default now(),
+    review_needed boolean null default false,
+    review_previous_smart jsonb
+);
+
+-- Indexes
+create index idx_smartgoals_goal_id on smartgoals(goal_id);
+create index idx_smartgoals_user_id on smartgoals(user_id);
+```
+
+### frameworks Table (`frameworks`)
+```sql
+create table
+  public.frameworks (
+    framework_id uuid not null default gen_random_uuid (),
+    name text not null,
+    description text null,
+    type text not null,
+    version text null default '1.0'::text,
+    created_by uuid null,
+    updated_by uuid null,
+    created_at timestamp with time zone null default now(),
+    updated_at timestamp with time zone null default now(),
+    constraint frameworks_pkey primary key (framework_id),
+    constraint frameworks_created_by_fkey foreign key (created_by) references auth.users (id),
+    constraint frameworks_updated_by_fkey foreign key (updated_by) references auth.users (id)
+  ) tablespace pg_default;
+
+create index if not exists idx_framework_name on public.frameworks using btree (name) tablespace pg_default;      
+```
+
+### framework_levels Table (`framework_levels`)
+```sql
+create table
+  public.framework_levels (
+    level_id uuid not null default gen_random_uuid (),
+    framework_id uuid not null,
+    name text not null,
+    description text null,
+    level_order integer not null,
+    parent_level_id uuid null,
+    framework_cluster_name text null,
+    framework_edi_compliance boolean null default false,
+    constraint framework_levels_pkey primary key (level_id),
+    constraint framework_levels_framework_id_fkey foreign key (framework_id) references frameworks (framework_id) on delete cascade,
+    constraint framework_levels_parent_level_id_fkey foreign key (parent_level_id) references framework_levels (level_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_framework_level_name on public.framework_levels using btree (name) tablespace pg_default;
+
+create index if not exists idx_framework_cluster_name on public.framework_levels using btree (framework_cluster_name) tablespace pg_default;
+```
+
+### feedback Table (`feedback`)
+```sql
+create table
+  public.feedback (
+    feedback_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    feedback_date date null default current_date,
+    feedback_type character varying(50) null,
+    feedback_content text null,
+    action_taken text null,
+    fk_goals uuid null,
+    fk_milestones uuid null,
+    fk_engagement uuid null,
+    constraint feedback_pkey primary key (feedback_id),
+    constraint feedback_fk_engagement_fkey foreign key (fk_engagement) references engagement (engagement_id),
+    constraint feedback_fk_goals_fkey foreign key (fk_goals) references goals (goal_id),
+    constraint feedback_fk_milestones_fkey foreign key (fk_milestones) references milestones (milestone_id),
+    constraint feedback_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_feedback_user_id on public.feedback using btree (user_id) tablespace pg_default;
+```
+
+### engagement Table (`engagement`)
+```sql
+create table
+  public.engagement (
+    engagement_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    interaction_type character varying(50) null,
+    interaction_date timestamp with time zone null default now(),
+    response_time interval null,
+    sentiment character varying(20) null,
+    notes text null,
+    fk_feedback uuid null,
+    fk_milestones uuid null,
+    fk_goals uuid null,
+    constraint engagement_pkey primary key (engagement_id),
+    constraint engagement_fk_feedback_fkey foreign key (fk_feedback) references feedback (feedback_id),
+    constraint engagement_fk_goals_fkey foreign key (fk_goals) references goals (goal_id),
+    constraint engagement_fk_milestones_fkey foreign key (fk_milestones) references milestones (milestone_id),
+    constraint engagement_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_engagement_user_id on public.engagement using btree (user_id) tablespace pg_default;
+```
+
+### settings Table (`updates`)
+```sql
+create table
+  public.updates (
+    update_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    update_type character varying(50) null,
+    update_date timestamp with time zone null default now(),
+    previous_value text null,
+    new_value text null,
+    update_reason text null,
+    source character varying(20) null,
+    notes text null,
+    reverted boolean null default false,
+    revert_date timestamp with time zone null,
+    fk_goal uuid null,
+    fk_milestone uuid null,
+    update_title text null,
+    constraint updates_pkey primary key (update_id),
+    constraint updates_fk_goal_fkey foreign key (fk_goal) references goals (goal_id),
+    constraint updates_fk_milestone_fkey foreign key (fk_milestone) references milestones (milestone_id),
+    constraint updates_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_updates_user_id on public.updates using btree (user_id) tablespace pg_default;
+```
+
+### userlogins Table (`userlogins`)
+```sql
+create table
+  public.userlogins (
+    login_id uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    login_time timestamp with time zone not null default now(),
+    time_diff_hours numeric null,
+    constraint userlogins_pkey primary key (login_id),
+    constraint userlogins_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_userlogins_user_id on public.userlogins using btree (user_id) tablespace pg_default;
+```
+
+### users Table (`auth.users`)
+```sql
+create table
+  auth.users (
+    instance_id uuid null,
+    id uuid not null,
+    aud character varying(255) null,
+    role character varying(255) null,
+    email character varying(255) null,
+    encrypted_password character varying(255) null,
+    email_confirmed_at timestamp with time zone null,
+    invited_at timestamp with time zone null,
+    confirmation_token character varying(255) null,
+    confirmation_sent_at timestamp with time zone null,
+    recovery_token character varying(255) null,
+    recovery_sent_at timestamp with time zone null,
+    email_change_token_new character varying(255) null,
+    email_change character varying(255) null,
+    email_change_sent_at timestamp with time zone null,
+    last_sign_in_at timestamp with time zone null,
+    raw_app_meta_data jsonb null,
+    raw_user_meta_data jsonb null,
+    is_super_admin boolean null,
+    created_at timestamp with time zone null,
+    updated_at timestamp with time zone null,
+    phone text null default null::character varying,
+    phone_confirmed_at timestamp with time zone null,
+    phone_change text null default ''::character varying,
+    phone_change_token character varying(255) null default ''::character varying,
+    phone_change_sent_at timestamp with time zone null,
+    confirmed_at timestamp with time zone generated always as (least(email_confirmed_at, phone_confirmed_at)) stored null,
+    email_change_token_current character varying(255) null default ''::character varying,
+    email_change_confirm_status smallint null default 0,
+    banned_until timestamp with time zone null,
+    reauthentication_token character varying(255) null default ''::character varying,
+    reauthentication_sent_at timestamp with time zone null,
+    is_sso_user boolean not null default false,
+    deleted_at timestamp with time zone null,
+    is_anonymous boolean not null default false,
+    constraint users_pkey primary key (id),
+    constraint users_phone_key unique (phone),
+    constraint users_email_change_confirm_status_check check (
+      (
+        (email_change_confirm_status >= 0)
+        and (email_change_confirm_status <= 2)
+      )
+    )
+  ) tablespace pg_default;
+
+create index if not exists users_instance_id_idx on auth.users using btree (instance_id) tablespace pg_default;
+
+create index if not exists users_instance_id_email_idx on auth.users using btree (instance_id, lower((email)::text)) tablespace pg_default;
+
+create unique index if not exists confirmation_token_idx on auth.users using btree (confirmation_token) tablespace pg_default
+where
+  ((confirmation_token)::text !~ '^[0-9 ]*$'::text);
+
+create unique index if not exists recovery_token_idx on auth.users using btree (recovery_token) tablespace pg_default
+where
+  ((recovery_token)::text !~ '^[0-9 ]*$'::text);
+
+create unique index if not exists email_change_token_current_idx on auth.users using btree (email_change_token_current) tablespace pg_default
+where
+  (
+    (email_change_token_current)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists email_change_token_new_idx on auth.users using btree (email_change_token_new) tablespace pg_default
+where
+  (
+    (email_change_token_new)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists reauthentication_token_idx on auth.users using btree (reauthentication_token) tablespace pg_default
+where
+  (
+    (reauthentication_token)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists users_email_partial_key on auth.users using btree (email) tablespace pg_default
+where
+  (is_sso_user = false);
+
+create index if not exists users_is_anonymous_idx on auth.users using btree (is_anonymous) tablespace pg_default;
+
+create trigger on_auth_user_created
+after insert on auth.users for each row
+execute function create_user_profile_v2 ();
 
 ---
 
@@ -1643,3 +2231,1589 @@ create index if not exists idx_userlogins_user_id on public.userlogins using btr
   - Particles originate from random positions
   - 40 particles per burst
   - 750ms delay between bursts
+
+---
+
+## Authentication and Password Management
+
+### Environment Configuration
+1. **Site URL Configuration**
+   - Environment Variable: `NEXT_PUBLIC_SITE_URL`
+   - Format: `# NEXT_PUBLIC_SITE_URL=http://your-domain.com`
+   - Purpose: Enables dynamic domain handling for authentication redirects
+   - Location: `.env.local`
+
+2. **Supabase URL Configuration**
+   - Required Setup: Configure redirect URLs in Supabase dashboard
+   - Path: `https://supabase.com/dashboard/project/{PROJECT_ID}/auth/url-configuration`
+   - Add your domain to the redirect URLs list
+   - Format: `http://your-domain.com/**`
+   - Note: Replace {PROJECT_ID} with your Supabase project ID
+
+### Password Reset Flow
+1. **Forgot Password Flow**
+   - Route: `/auth/forgot-password`
+   - Component: `ForgotPasswordForm`
+   - Functionality: 
+     - Allows users to request a password reset via email
+     - Uses dynamic site URL for redirects
+     - Non-authenticated route accessible to logged-out users
+
+2. **Password Reset Flow**
+   - Routes:
+     - `/auth/confirm` - Handles OTP verification
+     - `/auth/reset-password` - New password entry form
+     - `/auth/error` - Error handling page
+   - Components:
+     - `ResetPasswordForm`
+   - Implementation: 
+     - Uses Supabase PKCE flow for secure password reset
+     - Maintains domain consistency across redirects
+     - All routes are non-authenticated and accessible to logged-out users
+
+3. **URL Handling**
+   - Utility: `url-utils.ts`
+   - Functions:
+     - `getBaseUrl()` - Dynamic base URL detection
+       - Browser: Uses `window.location.origin`
+       - Server: Uses `NEXT_PUBLIC_SITE_URL` environment variable
+     - `getAuthRedirectUrl()` - Generates full auth redirect URLs
+   - Fallback: Defaults to `http://localhost:3000` if environment variable is not set
+
+4. **Public Routes**
+   The following routes are accessible without authentication:
+   ```typescript
+   const publicRoutes = [
+     '/auth/login',
+     '/auth/register',
+     '/auth/forgot-password',
+     '/auth/reset-password',
+     '/auth/confirm',
+     '/auth/error',
+     '/',
+     '/api/stripe/webhook'
+   ];
+   ```
+
+### Important Setup Steps
+1. Configure `.env.local`:
+   ```plaintext
+   # NEXT_PUBLIC_SITE_URL=http://your-domain.com
+   ```
+
+2. Configure Supabase URL Configuration:
+   - Access Supabase dashboard at: `https://supabase.com/dashboard/project/{PROJECT_ID}/auth/url-configuration`
+   - Add your domain to redirect URLs
+   - Format: `http://your-domain.com/**`
+   - This step is crucial for the password reset flow to work correctly
+
+3. Verify Middleware Configuration:
+   - Ensure all auth-related routes are listed in `publicRoutes`
+   - Check middleware.ts for proper route handling
+
+---
+
+## Type Safety and Build Error Prevention
+
+### Type Synchronization Guidelines
+1. When modifying type definitions:
+   - Update all related state types in components
+   - Check all useState hooks that use the modified type
+   - Ensure form data structures match the type definition
+   - Verify type consistency in any related components
+
+2. State Management Best Practices:
+   - Always define explicit types for useState hooks
+   - Avoid using partial types unless absolutely necessary
+   - Keep state types in sync with their corresponding model types
+   - When using setState with objects, ensure the object shape matches exactly
+
+3. Type Definition Changes Checklist:
+   ```typescript
+   // When updating a type (e.g., Goal):
+   - Update the base type definition (types/goal.ts)
+   - Update any state definitions using this type
+   - Update any form data structures
+   - Update any temporary state storage (like previousGoalData)
+   - Run type checking before committing changes: npm run type-check
+   ```
+
+4. Common Type-Related Build Issues:
+   - Property missing in state type but present in model type
+   - Inconsistent property names between state and model
+   - Missing properties in setState calls
+   - Incomplete type definitions in temporary state storage
+
+5. Prevention Strategy:
+   - Always run type checking before commits
+   - Keep type definitions centralized
+   - Maintain consistency between model and state types
+   - Document type dependencies in component comments
+
+## Authentication Flow
+- **Login Page** (`/auth/login`):
+  - Redirects to `/profile` if user is already logged in
+  - Contains links to register page for both mobile and desktop views
+  - Uses Supabase authentication
+
+- **Register Page** (`/auth/register`):
+  - Accessible whether logged in or not
+  - Registration form with fields:
+    - First Name
+    - Last Name
+    - Email
+    - Password
+    - Nickname
+    - Login Key
+  - Uses Supabase for user registration
+
+- **Auth Layout** (`/auth/layout.tsx`):
+  - Only redirects to profile if user is logged in AND on login page
+  - Allows access to register page regardless of authentication status
+
+## Database Table Structure
+
+### User Profile Table (`userprofile`)
+```sql
+create table
+  public.userprofile (
+    user_id uuid not null,
+    first_name text null,
+    last_name text null,
+    coaching_style_preference text null,
+    feedback_frequency text null,
+    privacy_settings jsonb null,
+    is_active boolean null default true,
+    last_logged_in timestamp with time zone null,
+    nick_name text null,
+    user_email text null,
+    induction_complete boolean null default false,
+    country text null,
+    city text null,
+    age numeric null,
+    gender text null,
+    last_donation timestamp with time zone null,
+    admin boolean null default false,
+    subscription_end_date date null default (now() + '30 days'::interval),
+    date_joined timestamp with time zone null default now(),
+    constraint userprofile_pkey primary key (user_id),
+    constraint userprofile_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+```
+
+### payments Table (`payments`)
+```sql
+create table
+  public.payments (
+    paymentid uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    issuccess boolean not null,
+    status text not null,
+    paymentstatus text not null,
+    paymentintentstatus text not null,
+    customeremail text not null,
+    amount numeric not null,
+    currency text not null,
+    paymenttype text not null,
+    timepaid timestamp without time zone null default (now() at time zone 'utc'::text),
+    stripepaymentid text null,
+    subsmonthcount numeric null default '1'::numeric,
+    subsenddate date null default (now() + '30 days'::interval),
+    constraint payments_pkey primary key (paymentid),
+    constraint payments_user_id_fkey foreign key (user_id) references userprofile (user_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_payments_user_id on public.payments using btree (user_id) tablespace pg_default;
+```
+
+### goals Table (`goals`)
+```sql
+create table
+  public.goals (
+    goal_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    goal_description text not null,
+    goal_type character varying(50) null,
+    created_at timestamp with time zone null default now(),
+    target_date date null,
+    progress numeric(5, 2) null default 0.00,
+    is_completed boolean null default false,
+    last_updated timestamp with time zone null default now(),
+    effort_level numeric null default '3'::numeric,
+    review_needed boolean null default false,
+    review_previous_goal jsonb null,
+    framework_id uuid null,
+    goal_title text null,
+    constraint goals_pkey primary key (goal_id),
+    constraint goals_framework_id_fkey foreign key (framework_id) references frameworks (framework_id) on delete cascade,
+    constraint goals_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_goals_user_id on public.goals using btree (user_id) tablespace pg_default;
+```
+
+### milestones Table (`milestones`)
+```sql
+create table
+  public.milestones (
+    milestone_id uuid not null default gen_random_uuid (),
+    goal_id uuid null,
+    milestone_description text not null,
+    target_date date null,
+    achieved boolean null default false,
+    achievement_date date null,
+    created_at timestamp with time zone null default now(),
+    last_updated timestamp with time zone null default now(),
+    review_needed boolean null default false,
+    review_previous_milestone jsonb null,
+    framework_level_id uuid null,
+    constraint milestones_pkey primary key (milestone_id),
+    constraint milestones_framework_level_id_fkey foreign key (framework_level_id) references framework_levels (level_id) on delete cascade,
+    constraint milestones_goal_id_fkey foreign key (goal_id) references goals (goal_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_milestones_goal_id on public.milestones using btree (goal_id) tablespace pg_default;
+```
+
+### smartgoals Table (`smartgoals`)
+```sql
+create table
+  public.smartgoals (
+    smart_id uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    goal_id uuid null,
+    specific text null,
+    measurable text null,
+    achievable text null,
+    relevant text null,
+    time_bound date null,
+    smart_progress numeric(5, 2) null default 0.00,
+    status text null default 'Pending',
+    created_at timestamp with time zone null default now(),
+    updated_at timestamp with time zone null default now(),
+    review_needed boolean null default false,
+    review_previous_smart jsonb
+);
+
+-- Indexes
+create index idx_smartgoals_goal_id on smartgoals(goal_id);
+create index idx_smartgoals_user_id on smartgoals(user_id);
+```
+
+### frameworks Table (`frameworks`)
+```sql
+create table
+  public.frameworks (
+    framework_id uuid not null default gen_random_uuid (),
+    name text not null,
+    description text null,
+    type text not null,
+    version text null default '1.0'::text,
+    created_by uuid null,
+    updated_by uuid null,
+    created_at timestamp with time zone null default now(),
+    updated_at timestamp with time zone null default now(),
+    constraint frameworks_pkey primary key (framework_id),
+    constraint frameworks_created_by_fkey foreign key (created_by) references auth.users (id),
+    constraint frameworks_updated_by_fkey foreign key (updated_by) references auth.users (id)
+  ) tablespace pg_default;
+
+create index if not exists idx_framework_name on public.frameworks using btree (name) tablespace pg_default;      
+```
+
+### framework_levels Table (`framework_levels`)
+```sql
+create table
+  public.framework_levels (
+    level_id uuid not null default gen_random_uuid (),
+    framework_id uuid not null,
+    name text not null,
+    description text null,
+    level_order integer not null,
+    parent_level_id uuid null,
+    framework_cluster_name text null,
+    framework_edi_compliance boolean null default false,
+    constraint framework_levels_pkey primary key (level_id),
+    constraint framework_levels_framework_id_fkey foreign key (framework_id) references frameworks (framework_id) on delete cascade,
+    constraint framework_levels_parent_level_id_fkey foreign key (parent_level_id) references framework_levels (level_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_framework_level_name on public.framework_levels using btree (name) tablespace pg_default;
+
+create index if not exists idx_framework_cluster_name on public.framework_levels using btree (framework_cluster_name) tablespace pg_default;
+```
+
+### feedback Table (`feedback`)
+```sql
+create table
+  public.feedback (
+    feedback_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    feedback_date date null default current_date,
+    feedback_type character varying(50) null,
+    feedback_content text null,
+    action_taken text null,
+    fk_goals uuid null,
+    fk_milestones uuid null,
+    fk_engagement uuid null,
+    constraint feedback_pkey primary key (feedback_id),
+    constraint feedback_fk_engagement_fkey foreign key (fk_engagement) references engagement (engagement_id),
+    constraint feedback_fk_goals_fkey foreign key (fk_goals) references goals (goal_id),
+    constraint feedback_fk_milestones_fkey foreign key (fk_milestones) references milestones (milestone_id),
+    constraint feedback_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_feedback_user_id on public.feedback using btree (user_id) tablespace pg_default;
+```
+
+### engagement Table (`engagement`)
+```sql
+create table
+  public.engagement (
+    engagement_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    interaction_type character varying(50) null,
+    interaction_date timestamp with time zone null default now(),
+    response_time interval null,
+    sentiment character varying(20) null,
+    notes text null,
+    fk_feedback uuid null,
+    fk_milestones uuid null,
+    fk_goals uuid null,
+    constraint engagement_pkey primary key (engagement_id),
+    constraint engagement_fk_feedback_fkey foreign key (fk_feedback) references feedback (feedback_id),
+    constraint engagement_fk_goals_fkey foreign key (fk_goals) references goals (goal_id),
+    constraint engagement_fk_milestones_fkey foreign key (fk_milestones) references milestones (milestone_id),
+    constraint engagement_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_engagement_user_id on public.engagement using btree (user_id) tablespace pg_default;
+```
+
+### settings Table (`updates`)
+```sql
+create table
+  public.updates (
+    update_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    update_type character varying(50) null,
+    update_date timestamp with time zone null default now(),
+    previous_value text null,
+    new_value text null,
+    update_reason text null,
+    source character varying(20) null,
+    notes text null,
+    reverted boolean null default false,
+    revert_date timestamp with time zone null,
+    fk_goal uuid null,
+    fk_milestone uuid null,
+    update_title text null,
+    constraint updates_pkey primary key (update_id),
+    constraint updates_fk_goal_fkey foreign key (fk_goal) references goals (goal_id),
+    constraint updates_fk_milestone_fkey foreign key (fk_milestone) references milestones (milestone_id),
+    constraint updates_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_updates_user_id on public.updates using btree (user_id) tablespace pg_default;
+```
+
+### userlogins Table (`userlogins`)
+```sql
+create table
+  public.userlogins (
+    login_id uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    login_time timestamp with time zone not null default now(),
+    time_diff_hours numeric null,
+    constraint userlogins_pkey primary key (login_id),
+    constraint userlogins_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_userlogins_user_id on public.userlogins using btree (user_id) tablespace pg_default;
+```
+
+### users Table (`auth.users`)
+```sql
+create table
+  auth.users (
+    instance_id uuid null,
+    id uuid not null,
+    aud character varying(255) null,
+    role character varying(255) null,
+    email character varying(255) null,
+    encrypted_password character varying(255) null,
+    email_confirmed_at timestamp with time zone null,
+    invited_at timestamp with time zone null,
+    confirmation_token character varying(255) null,
+    confirmation_sent_at timestamp with time zone null,
+    recovery_token character varying(255) null,
+    recovery_sent_at timestamp with time zone null,
+    email_change_token_new character varying(255) null,
+    email_change character varying(255) null,
+    email_change_sent_at timestamp with time zone null,
+    last_sign_in_at timestamp with time zone null,
+    raw_app_meta_data jsonb null,
+    raw_user_meta_data jsonb null,
+    is_super_admin boolean null,
+    created_at timestamp with time zone null,
+    updated_at timestamp with time zone null,
+    phone text null default null::character varying,
+    phone_confirmed_at timestamp with time zone null,
+    phone_change text null default ''::character varying,
+    phone_change_token character varying(255) null default ''::character varying,
+    phone_change_sent_at timestamp with time zone null,
+    confirmed_at timestamp with time zone generated always as (least(email_confirmed_at, phone_confirmed_at)) stored null,
+    email_change_token_current character varying(255) null default ''::character varying,
+    email_change_confirm_status smallint null default 0,
+    banned_until timestamp with time zone null,
+    reauthentication_token character varying(255) null default ''::character varying,
+    reauthentication_sent_at timestamp with time zone null,
+    is_sso_user boolean not null default false,
+    deleted_at timestamp with time zone null,
+    is_anonymous boolean not null default false,
+    constraint users_pkey primary key (id),
+    constraint users_phone_key unique (phone),
+    constraint users_email_change_confirm_status_check check (
+      (
+        (email_change_confirm_status >= 0)
+        and (email_change_confirm_status <= 2)
+      )
+    )
+  ) tablespace pg_default;
+
+create index if not exists users_instance_id_idx on auth.users using btree (instance_id) tablespace pg_default;
+
+create index if not exists users_instance_id_email_idx on auth.users using btree (instance_id, lower((email)::text)) tablespace pg_default;
+
+create unique index if not exists confirmation_token_idx on auth.users using btree (confirmation_token) tablespace pg_default
+where
+  ((confirmation_token)::text !~ '^[0-9 ]*$'::text);
+
+create unique index if not exists recovery_token_idx on auth.users using btree (recovery_token) tablespace pg_default
+where
+  ((recovery_token)::text !~ '^[0-9 ]*$'::text);
+
+create unique index if not exists email_change_token_current_idx on auth.users using btree (email_change_token_current) tablespace pg_default
+where
+  (
+    (email_change_token_current)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists email_change_token_new_idx on auth.users using btree (email_change_token_new) tablespace pg_default
+where
+  (
+    (email_change_token_new)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists reauthentication_token_idx on auth.users using btree (reauthentication_token) tablespace pg_default
+where
+  (
+    (reauthentication_token)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists users_email_partial_key on auth.users using btree (email) tablespace pg_default
+where
+  (is_sso_user = false);
+
+create index if not exists users_is_anonymous_idx on auth.users using btree (is_anonymous) tablespace pg_default;
+
+create trigger on_auth_user_created
+after insert on auth.users for each row
+execute function create_user_profile_v2 ();
+
+---
+
+## Authentication and Password Management
+
+### URL Configuration
+1. **Supabase URL Configuration (Required)**
+   - Required Setup: Configure redirect URLs in Supabase dashboard
+   - Path: `https://supabase.com/dashboard/project/{PROJECT_ID}/auth/url-configuration`
+   - Add your domain to the redirect URLs list
+   - Format: `http://your-domain.com/**`
+   - Note: Replace {PROJECT_ID} with your Supabase project ID
+   - This configuration is crucial for the password reset flow to work correctly
+
+2. **URL Handling**
+   - Utility: `url-utils.ts`
+   - Functions:
+     - `getBaseUrl()` - Dynamic base URL detection
+       - Browser: Uses `window.location.origin` (automatically gets current domain)
+       - Server: Falls back to localhost (server-side URL not needed for auth flows)
+     - `getAuthRedirectUrl()` - Generates full auth redirect URLs
+
+### Password Reset Flow
+1. **Forgot Password Flow**
+   - Route: `/auth/forgot-password`
+   - Component: `ForgotPasswordForm`
+   - Functionality: 
+     - Allows users to request a password reset via email
+     - Uses browser's current domain for redirects
+     - Non-authenticated route accessible to logged-out users
+
+2. **Password Reset Flow**
+   - Routes:
+     - `/auth/confirm` - Handles OTP verification
+     - `/auth/reset-password` - New password entry form
+     - `/auth/error` - Error handling page
+   - Components:
+     - `ResetPasswordForm`
+   - Implementation: 
+     - Uses Supabase PKCE flow for secure password reset
+     - Uses browser's current domain for redirects
+     - All routes are non-authenticated and accessible to logged-out users
+
+3. **Public Routes**
+   The following routes are accessible without authentication:
+   ```typescript
+   const publicRoutes = [
+     '/auth/login',
+     '/auth/register',
+     '/auth/forgot-password',
+     '/auth/reset-password',
+     '/auth/confirm',
+     '/auth/error',
+     '/',
+     '/api/stripe/webhook'
+   ];
+   ```
+
+### Important Setup Steps
+1. Configure Supabase URL Configuration:
+   - Access Supabase dashboard at: `https://supabase.com/dashboard/project/{PROJECT_ID}/auth/url-configuration`
+   - Add your domain to redirect URLs
+   - Format: `http://your-domain.com/**`
+   - This step is crucial for the password reset flow to work correctly
+
+2. Verify Middleware Configuration:
+   - Ensure all auth-related routes are listed in `publicRoutes`
+   - Check middleware.ts for proper route handling
+
+---
+
+## Type Safety and Build Error Prevention
+
+### Type Synchronization Guidelines
+1. When modifying type definitions:
+   - Update all related state types in components
+   - Check all useState hooks that use the modified type
+   - Ensure form data structures match the type definition
+   - Verify type consistency in any related components
+
+2. State Management Best Practices:
+   - Always define explicit types for useState hooks
+   - Avoid using partial types unless absolutely necessary
+   - Keep state types in sync with their corresponding model types
+   - When using setState with objects, ensure the object shape matches exactly
+
+3. Type Definition Changes Checklist:
+   ```typescript
+   // When updating a type (e.g., Goal):
+   - Update the base type definition (types/goal.ts)
+   - Update any state definitions using this type
+   - Update any form data structures
+   - Update any temporary state storage (like previousGoalData)
+   - Run type checking before committing changes: npm run type-check
+   ```
+
+4. Common Type-Related Build Issues:
+   - Property missing in state type but present in model type
+   - Inconsistent property names between state and model
+   - Missing properties in setState calls
+   - Incomplete type definitions in temporary state storage
+
+5. Prevention Strategy:
+   - Always run type checking before commits
+   - Keep type definitions centralized
+   - Maintain consistency between model and state types
+   - Document type dependencies in component comments
+
+## Authentication Flow
+- **Login Page** (`/auth/login`):
+  - Redirects to `/profile` if user is already logged in
+  - Contains links to register page for both mobile and desktop views
+  - Uses Supabase authentication
+
+- **Register Page** (`/auth/register`):
+  - Accessible whether logged in or not
+  - Registration form with fields:
+    - First Name
+    - Last Name
+    - Email
+    - Password
+    - Nickname
+    - Login Key
+  - Uses Supabase for user registration
+
+- **Auth Layout** (`/auth/layout.tsx`):
+  - Only redirects to profile if user is logged in AND on login page
+  - Allows access to register page regardless of authentication status
+
+## Database Table Structure
+
+### User Profile Table (`userprofile`)
+```sql
+create table
+  public.userprofile (
+    user_id uuid not null,
+    first_name text null,
+    last_name text null,
+    coaching_style_preference text null,
+    feedback_frequency text null,
+    privacy_settings jsonb null,
+    is_active boolean null default true,
+    last_logged_in timestamp with time zone null,
+    nick_name text null,
+    user_email text null,
+    induction_complete boolean null default false,
+    country text null,
+    city text null,
+    age numeric null,
+    gender text null,
+    last_donation timestamp with time zone null,
+    admin boolean null default false,
+    subscription_end_date date null default (now() + '30 days'::interval),
+    date_joined timestamp with time zone null default now(),
+    constraint userprofile_pkey primary key (user_id),
+    constraint userprofile_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+```
+
+### payments Table (`payments`)
+```sql
+create table
+  public.payments (
+    paymentid uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    issuccess boolean not null,
+    status text not null,
+    paymentstatus text not null,
+    paymentintentstatus text not null,
+    customeremail text not null,
+    amount numeric not null,
+    currency text not null,
+    paymenttype text not null,
+    timepaid timestamp without time zone null default (now() at time zone 'utc'::text),
+    stripepaymentid text null,
+    subsmonthcount numeric null default '1'::numeric,
+    subsenddate date null default (now() + '30 days'::interval),
+    constraint payments_pkey primary key (paymentid),
+    constraint payments_user_id_fkey foreign key (user_id) references userprofile (user_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_payments_user_id on public.payments using btree (user_id) tablespace pg_default;
+```
+
+### goals Table (`goals`)
+```sql
+create table
+  public.goals (
+    goal_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    goal_description text not null,
+    goal_type character varying(50) null,
+    created_at timestamp with time zone null default now(),
+    target_date date null,
+    progress numeric(5, 2) null default 0.00,
+    is_completed boolean null default false,
+    last_updated timestamp with time zone null default now(),
+    effort_level numeric null default '3'::numeric,
+    review_needed boolean null default false,
+    review_previous_goal jsonb null,
+    framework_id uuid null,
+    goal_title text null,
+    constraint goals_pkey primary key (goal_id),
+    constraint goals_framework_id_fkey foreign key (framework_id) references frameworks (framework_id) on delete cascade,
+    constraint goals_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_goals_user_id on public.goals using btree (user_id) tablespace pg_default;
+```
+
+### milestones Table (`milestones`)
+```sql
+create table
+  public.milestones (
+    milestone_id uuid not null default gen_random_uuid (),
+    goal_id uuid null,
+    milestone_description text not null,
+    target_date date null,
+    achieved boolean null default false,
+    achievement_date date null,
+    created_at timestamp with time zone null default now(),
+    last_updated timestamp with time zone null default now(),
+    review_needed boolean null default false,
+    review_previous_milestone jsonb null,
+    framework_level_id uuid null,
+    constraint milestones_pkey primary key (milestone_id),
+    constraint milestones_framework_level_id_fkey foreign key (framework_level_id) references framework_levels (level_id) on delete cascade,
+    constraint milestones_goal_id_fkey foreign key (goal_id) references goals (goal_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_milestones_goal_id on public.milestones using btree (goal_id) tablespace pg_default;
+```
+
+### smartgoals Table (`smartgoals`)
+```sql
+create table
+  public.smartgoals (
+    smart_id uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    goal_id uuid null,
+    specific text null,
+    measurable text null,
+    achievable text null,
+    relevant text null,
+    time_bound date null,
+    smart_progress numeric(5, 2) null default 0.00,
+    status text null default 'Pending',
+    created_at timestamp with time zone null default now(),
+    updated_at timestamp with time zone null default now(),
+    review_needed boolean null default false,
+    review_previous_smart jsonb
+);
+
+-- Indexes
+create index idx_smartgoals_goal_id on smartgoals(goal_id);
+create index idx_smartgoals_user_id on smartgoals(user_id);
+```
+
+### frameworks Table (`frameworks`)
+```sql
+create table
+  public.frameworks (
+    framework_id uuid not null default gen_random_uuid (),
+    name text not null,
+    description text null,
+    type text not null,
+    version text null default '1.0'::text,
+    created_by uuid null,
+    updated_by uuid null,
+    created_at timestamp with time zone null default now(),
+    updated_at timestamp with time zone null default now(),
+    constraint frameworks_pkey primary key (framework_id),
+    constraint frameworks_created_by_fkey foreign key (created_by) references auth.users (id),
+    constraint frameworks_updated_by_fkey foreign key (updated_by) references auth.users (id)
+  ) tablespace pg_default;
+
+create index if not exists idx_framework_name on public.frameworks using btree (name) tablespace pg_default;      
+```
+
+### framework_levels Table (`framework_levels`)
+```sql
+create table
+  public.framework_levels (
+    level_id uuid not null default gen_random_uuid (),
+    framework_id uuid not null,
+    name text not null,
+    description text null,
+    level_order integer not null,
+    parent_level_id uuid null,
+    framework_cluster_name text null,
+    framework_edi_compliance boolean null default false,
+    constraint framework_levels_pkey primary key (level_id),
+    constraint framework_levels_framework_id_fkey foreign key (framework_id) references frameworks (framework_id) on delete cascade,
+    constraint framework_levels_parent_level_id_fkey foreign key (parent_level_id) references framework_levels (level_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_framework_level_name on public.framework_levels using btree (name) tablespace pg_default;
+
+create index if not exists idx_framework_cluster_name on public.framework_levels using btree (framework_cluster_name) tablespace pg_default;
+```
+
+### feedback Table (`feedback`)
+```sql
+create table
+  public.feedback (
+    feedback_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    feedback_date date null default current_date,
+    feedback_type character varying(50) null,
+    feedback_content text null,
+    action_taken text null,
+    fk_goals uuid null,
+    fk_milestones uuid null,
+    fk_engagement uuid null,
+    constraint feedback_pkey primary key (feedback_id),
+    constraint feedback_fk_engagement_fkey foreign key (fk_engagement) references engagement (engagement_id),
+    constraint feedback_fk_goals_fkey foreign key (fk_goals) references goals (goal_id),
+    constraint feedback_fk_milestones_fkey foreign key (fk_milestones) references milestones (milestone_id),
+    constraint feedback_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_feedback_user_id on public.feedback using btree (user_id) tablespace pg_default;
+```
+
+### engagement Table (`engagement`)
+```sql
+create table
+  public.engagement (
+    engagement_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    interaction_type character varying(50) null,
+    interaction_date timestamp with time zone null default now(),
+    response_time interval null,
+    sentiment character varying(20) null,
+    notes text null,
+    fk_feedback uuid null,
+    fk_milestones uuid null,
+    fk_goals uuid null,
+    constraint engagement_pkey primary key (engagement_id),
+    constraint engagement_fk_feedback_fkey foreign key (fk_feedback) references feedback (feedback_id),
+    constraint engagement_fk_goals_fkey foreign key (fk_goals) references goals (goal_id),
+    constraint engagement_fk_milestones_fkey foreign key (fk_milestones) references milestones (milestone_id),
+    constraint engagement_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_engagement_user_id on public.engagement using btree (user_id) tablespace pg_default;
+```
+
+### settings Table (`updates`)
+```sql
+create table
+  public.updates (
+    update_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    update_type character varying(50) null,
+    update_date timestamp with time zone null default now(),
+    previous_value text null,
+    new_value text null,
+    update_reason text null,
+    source character varying(20) null,
+    notes text null,
+    reverted boolean null default false,
+    revert_date timestamp with time zone null,
+    fk_goal uuid null,
+    fk_milestone uuid null,
+    update_title text null,
+    constraint updates_pkey primary key (update_id),
+    constraint updates_fk_goal_fkey foreign key (fk_goal) references goals (goal_id),
+    constraint updates_fk_milestone_fkey foreign key (fk_milestone) references milestones (milestone_id),
+    constraint updates_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_updates_user_id on public.updates using btree (user_id) tablespace pg_default;
+```
+
+### userlogins Table (`userlogins`)
+```sql
+create table
+  public.userlogins (
+    login_id uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    login_time timestamp with time zone not null default now(),
+    time_diff_hours numeric null,
+    constraint userlogins_pkey primary key (login_id),
+    constraint userlogins_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_userlogins_user_id on public.userlogins using btree (user_id) tablespace pg_default;
+```
+
+### users Table (`auth.users`)
+```sql
+create table
+  auth.users (
+    instance_id uuid null,
+    id uuid not null,
+    aud character varying(255) null,
+    role character varying(255) null,
+    email character varying(255) null,
+    encrypted_password character varying(255) null,
+    email_confirmed_at timestamp with time zone null,
+    invited_at timestamp with time zone null,
+    confirmation_token character varying(255) null,
+    confirmation_sent_at timestamp with time zone null,
+    recovery_token character varying(255) null,
+    recovery_sent_at timestamp with time zone null,
+    email_change_token_new character varying(255) null,
+    email_change character varying(255) null,
+    email_change_sent_at timestamp with time zone null,
+    last_sign_in_at timestamp with time zone null,
+    raw_app_meta_data jsonb null,
+    raw_user_meta_data jsonb null,
+    is_super_admin boolean null,
+    created_at timestamp with time zone null,
+    updated_at timestamp with time zone null,
+    phone text null default null::character varying,
+    phone_confirmed_at timestamp with time zone null,
+    phone_change text null default ''::character varying,
+    phone_change_token character varying(255) null default ''::character varying,
+    phone_change_sent_at timestamp with time zone null,
+    confirmed_at timestamp with time zone generated always as (least(email_confirmed_at, phone_confirmed_at)) stored null,
+    email_change_token_current character varying(255) null default ''::character varying,
+    email_change_confirm_status smallint null default 0,
+    banned_until timestamp with time zone null,
+    reauthentication_token character varying(255) null default ''::character varying,
+    reauthentication_sent_at timestamp with time zone null,
+    is_sso_user boolean not null default false,
+    deleted_at timestamp with time zone null,
+    is_anonymous boolean not null default false,
+    constraint users_pkey primary key (id),
+    constraint users_phone_key unique (phone),
+    constraint users_email_change_confirm_status_check check (
+      (
+        (email_change_confirm_status >= 0)
+        and (email_change_confirm_status <= 2)
+      )
+    )
+  ) tablespace pg_default;
+
+create index if not exists users_instance_id_idx on auth.users using btree (instance_id) tablespace pg_default;
+
+create index if not exists users_instance_id_email_idx on auth.users using btree (instance_id, lower((email)::text)) tablespace pg_default;
+
+create unique index if not exists confirmation_token_idx on auth.users using btree (confirmation_token) tablespace pg_default
+where
+  ((confirmation_token)::text !~ '^[0-9 ]*$'::text);
+
+create unique index if not exists recovery_token_idx on auth.users using btree (recovery_token) tablespace pg_default
+where
+  ((recovery_token)::text !~ '^[0-9 ]*$'::text);
+
+create unique index if not exists email_change_token_current_idx on auth.users using btree (email_change_token_current) tablespace pg_default
+where
+  (
+    (email_change_token_current)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists email_change_token_new_idx on auth.users using btree (email_change_token_new) tablespace pg_default
+where
+  (
+    (email_change_token_new)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists reauthentication_token_idx on auth.users using btree (reauthentication_token) tablespace pg_default
+where
+  (
+    (reauthentication_token)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists users_email_partial_key on auth.users using btree (email) tablespace pg_default
+where
+  (is_sso_user = false);
+
+create index if not exists users_is_anonymous_idx on auth.users using btree (is_anonymous) tablespace pg_default;
+
+create trigger on_auth_user_created
+after insert on auth.users for each row
+execute function create_user_profile_v2 ();
+
+---
+
+## Authentication and Password Management
+
+### URL Configuration
+1. **Supabase URL Configuration (Required)**
+   - Required Setup: Configure redirect URLs in Supabase dashboard
+   - Path: `https://supabase.com/dashboard/project/{PROJECT_ID}/auth/url-configuration`
+   - Add your domain to the redirect URLs list
+   - Format: `http://your-domain.com/**`
+   - Note: Replace {PROJECT_ID} with your Supabase project ID
+   - This configuration is crucial for the password reset flow to work correctly
+
+2. **URL Handling**
+   - Utility: `url-utils.ts`
+   - Functions:
+     - `getBaseUrl()` - Dynamic base URL detection
+       - Browser: Uses `window.location.origin` (automatically gets current domain)
+       - Server: Falls back to localhost (server-side URL not needed for auth flows)
+     - `getAuthRedirectUrl()` - Generates full auth redirect URLs
+
+### Password Reset Flow
+1. **Forgot Password Flow**
+   - Route: `/auth/forgot-password`
+   - Component: `ForgotPasswordForm`
+   - Functionality: 
+     - Allows users to request a password reset via email
+     - Uses browser's current domain for redirects
+     - Non-authenticated route accessible to logged-out users
+
+2. **Password Reset Flow**
+   - Routes:
+     - `/auth/confirm` - Handles OTP verification
+     - `/auth/reset-password` - New password entry form
+     - `/auth/error` - Error handling page
+   - Components:
+     - `ResetPasswordForm`
+   - Implementation: 
+     - Uses Supabase PKCE flow for secure password reset
+     - Uses browser's current domain for redirects
+     - All routes are non-authenticated and accessible to logged-out users
+
+3. **Public Routes**
+   The following routes are accessible without authentication:
+   ```typescript
+   const publicRoutes = [
+     '/auth/login',
+     '/auth/register',
+     '/auth/forgot-password',
+     '/auth/reset-password',
+     '/auth/confirm',
+     '/auth/error',
+     '/',
+     '/api/stripe/webhook'
+   ];
+   ```
+
+### Important Setup Steps
+1. Configure Supabase URL Configuration:
+   - Access Supabase dashboard at: `https://supabase.com/dashboard/project/{PROJECT_ID}/auth/url-configuration`
+   - Add your domain to redirect URLs
+   - Format: `http://your-domain.com/**`
+   - This step is crucial for the password reset flow to work correctly
+
+2. Verify Middleware Configuration:
+   - Ensure all auth-related routes are listed in `publicRoutes`
+   - Check middleware.ts for proper route handling
+
+---
+
+## Type Safety and Build Error Prevention
+
+### Type Synchronization Guidelines
+1. When modifying type definitions:
+   - Update all related state types in components
+   - Check all useState hooks that use the modified type
+   - Ensure form data structures match the type definition
+   - Verify type consistency in any related components
+
+2. State Management Best Practices:
+   - Always define explicit types for useState hooks
+   - Avoid using partial types unless absolutely necessary
+   - Keep state types in sync with their corresponding model types
+   - When using setState with objects, ensure the object shape matches exactly
+
+3. Type Definition Changes Checklist:
+   ```typescript
+   // When updating a type (e.g., Goal):
+   - Update the base type definition (types/goal.ts)
+   - Update any state definitions using this type
+   - Update any form data structures
+   - Update any temporary state storage (like previousGoalData)
+   - Run type checking before committing changes: npm run type-check
+   ```
+
+4. Common Type-Related Build Issues:
+   - Property missing in state type but present in model type
+   - Inconsistent property names between state and model
+   - Missing properties in setState calls
+   - Incomplete type definitions in temporary state storage
+
+5. Prevention Strategy:
+   - Always run type checking before commits
+   - Keep type definitions centralized
+   - Maintain consistency between model and state types
+   - Document type dependencies in component comments
+
+## Authentication Flow
+- **Login Page** (`/auth/login`):
+  - Redirects to `/profile` if user is already logged in
+  - Contains links to register page for both mobile and desktop views
+  - Uses Supabase authentication
+
+- **Register Page** (`/auth/register`):
+  - Accessible whether logged in or not
+  - Registration form with fields:
+    - First Name
+    - Last Name
+    - Email
+    - Password
+    - Nickname
+    - Login Key
+  - Uses Supabase for user registration
+
+- **Auth Layout** (`/auth/layout.tsx`):
+  - Only redirects to profile if user is logged in AND on login page
+  - Allows access to register page regardless of authentication status
+
+## Database Table Structure
+
+### User Profile Table (`userprofile`)
+```sql
+create table
+  public.userprofile (
+    user_id uuid not null,
+    first_name text null,
+    last_name text null,
+    coaching_style_preference text null,
+    feedback_frequency text null,
+    privacy_settings jsonb null,
+    is_active boolean null default true,
+    last_logged_in timestamp with time zone null,
+    nick_name text null,
+    user_email text null,
+    induction_complete boolean null default false,
+    country text null,
+    city text null,
+    age numeric null,
+    gender text null,
+    last_donation timestamp with time zone null,
+    admin boolean null default false,
+    subscription_end_date date null default (now() + '30 days'::interval),
+    date_joined timestamp with time zone null default now(),
+    constraint userprofile_pkey primary key (user_id),
+    constraint userprofile_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+```
+
+### payments Table (`payments`)
+```sql
+create table
+  public.payments (
+    paymentid uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    issuccess boolean not null,
+    status text not null,
+    paymentstatus text not null,
+    paymentintentstatus text not null,
+    customeremail text not null,
+    amount numeric not null,
+    currency text not null,
+    paymenttype text not null,
+    timepaid timestamp without time zone null default (now() at time zone 'utc'::text),
+    stripepaymentid text null,
+    subsmonthcount numeric null default '1'::numeric,
+    subsenddate date null default (now() + '30 days'::interval),
+    constraint payments_pkey primary key (paymentid),
+    constraint payments_user_id_fkey foreign key (user_id) references userprofile (user_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_payments_user_id on public.payments using btree (user_id) tablespace pg_default;
+```
+
+### goals Table (`goals`)
+```sql
+create table
+  public.goals (
+    goal_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    goal_description text not null,
+    goal_type character varying(50) null,
+    created_at timestamp with time zone null default now(),
+    target_date date null,
+    progress numeric(5, 2) null default 0.00,
+    is_completed boolean null default false,
+    last_updated timestamp with time zone null default now(),
+    effort_level numeric null default '3'::numeric,
+    review_needed boolean null default false,
+    review_previous_goal jsonb null,
+    framework_id uuid null,
+    goal_title text null,
+    constraint goals_pkey primary key (goal_id),
+    constraint goals_framework_id_fkey foreign key (framework_id) references frameworks (framework_id) on delete cascade,
+    constraint goals_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_goals_user_id on public.goals using btree (user_id) tablespace pg_default;
+```
+
+### milestones Table (`milestones`)
+```sql
+create table
+  public.milestones (
+    milestone_id uuid not null default gen_random_uuid (),
+    goal_id uuid null,
+    milestone_description text not null,
+    target_date date null,
+    achieved boolean null default false,
+    achievement_date date null,
+    created_at timestamp with time zone null default now(),
+    last_updated timestamp with time zone null default now(),
+    review_needed boolean null default false,
+    review_previous_milestone jsonb null,
+    framework_level_id uuid null,
+    constraint milestones_pkey primary key (milestone_id),
+    constraint milestones_framework_level_id_fkey foreign key (framework_level_id) references framework_levels (level_id) on delete cascade,
+    constraint milestones_goal_id_fkey foreign key (goal_id) references goals (goal_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_milestones_goal_id on public.milestones using btree (goal_id) tablespace pg_default;
+```
+
+### smartgoals Table (`smartgoals`)
+```sql
+create table
+  public.smartgoals (
+    smart_id uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    goal_id uuid null,
+    specific text null,
+    measurable text null,
+    achievable text null,
+    relevant text null,
+    time_bound date null,
+    smart_progress numeric(5, 2) null default 0.00,
+    status text null default 'Pending',
+    created_at timestamp with time zone null default now(),
+    updated_at timestamp with time zone null default now(),
+    review_needed boolean null default false,
+    review_previous_smart jsonb
+);
+
+-- Indexes
+create index idx_smartgoals_goal_id on smartgoals(goal_id);
+create index idx_smartgoals_user_id on smartgoals(user_id);
+```
+
+### frameworks Table (`frameworks`)
+```sql
+create table
+  public.frameworks (
+    framework_id uuid not null default gen_random_uuid (),
+    name text not null,
+    description text null,
+    type text not null,
+    version text null default '1.0'::text,
+    created_by uuid null,
+    updated_by uuid null,
+    created_at timestamp with time zone null default now(),
+    updated_at timestamp with time zone null default now(),
+    constraint frameworks_pkey primary key (framework_id),
+    constraint frameworks_created_by_fkey foreign key (created_by) references auth.users (id),
+    constraint frameworks_updated_by_fkey foreign key (updated_by) references auth.users (id)
+  ) tablespace pg_default;
+
+create index if not exists idx_framework_name on public.frameworks using btree (name) tablespace pg_default;      
+```
+
+### framework_levels Table (`framework_levels`)
+```sql
+create table
+  public.framework_levels (
+    level_id uuid not null default gen_random_uuid (),
+    framework_id uuid not null,
+    name text not null,
+    description text null,
+    level_order integer not null,
+    parent_level_id uuid null,
+    framework_cluster_name text null,
+    framework_edi_compliance boolean null default false,
+    constraint framework_levels_pkey primary key (level_id),
+    constraint framework_levels_framework_id_fkey foreign key (framework_id) references frameworks (framework_id) on delete cascade,
+    constraint framework_levels_parent_level_id_fkey foreign key (parent_level_id) references framework_levels (level_id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_framework_level_name on public.framework_levels using btree (name) tablespace pg_default;
+
+create index if not exists idx_framework_cluster_name on public.framework_levels using btree (framework_cluster_name) tablespace pg_default;
+```
+
+### feedback Table (`feedback`)
+```sql
+create table
+  public.feedback (
+    feedback_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    feedback_date date null default current_date,
+    feedback_type character varying(50) null,
+    feedback_content text null,
+    action_taken text null,
+    fk_goals uuid null,
+    fk_milestones uuid null,
+    fk_engagement uuid null,
+    constraint feedback_pkey primary key (feedback_id),
+    constraint feedback_fk_engagement_fkey foreign key (fk_engagement) references engagement (engagement_id),
+    constraint feedback_fk_goals_fkey foreign key (fk_goals) references goals (goal_id),
+    constraint feedback_fk_milestones_fkey foreign key (fk_milestones) references milestones (milestone_id),
+    constraint feedback_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_feedback_user_id on public.feedback using btree (user_id) tablespace pg_default;
+```
+
+### engagement Table (`engagement`)
+```sql
+create table
+  public.engagement (
+    engagement_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    interaction_type character varying(50) null,
+    interaction_date timestamp with time zone null default now(),
+    response_time interval null,
+    sentiment character varying(20) null,
+    notes text null,
+    fk_feedback uuid null,
+    fk_milestones uuid null,
+    fk_goals uuid null,
+    constraint engagement_pkey primary key (engagement_id),
+    constraint engagement_fk_feedback_fkey foreign key (fk_feedback) references feedback (feedback_id),
+    constraint engagement_fk_goals_fkey foreign key (fk_goals) references goals (goal_id),
+    constraint engagement_fk_milestones_fkey foreign key (fk_milestones) references milestones (milestone_id),
+    constraint engagement_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_engagement_user_id on public.engagement using btree (user_id) tablespace pg_default;
+```
+
+### settings Table (`updates`)
+```sql
+create table
+  public.updates (
+    update_id uuid not null default gen_random_uuid (),
+    user_id uuid null,
+    update_type character varying(50) null,
+    update_date timestamp with time zone null default now(),
+    previous_value text null,
+    new_value text null,
+    update_reason text null,
+    source character varying(20) null,
+    notes text null,
+    reverted boolean null default false,
+    revert_date timestamp with time zone null,
+    fk_goal uuid null,
+    fk_milestone uuid null,
+    update_title text null,
+    constraint updates_pkey primary key (update_id),
+    constraint updates_fk_goal_fkey foreign key (fk_goal) references goals (goal_id),
+    constraint updates_fk_milestone_fkey foreign key (fk_milestone) references milestones (milestone_id),
+    constraint updates_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_updates_user_id on public.updates using btree (user_id) tablespace pg_default;
+```
+
+### userlogins Table (`userlogins`)
+```sql
+create table
+  public.userlogins (
+    login_id uuid not null default gen_random_uuid (),
+    user_id uuid not null,
+    login_time timestamp with time zone not null default now(),
+    time_diff_hours numeric null,
+    constraint userlogins_pkey primary key (login_id),
+    constraint userlogins_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
+
+create index if not exists idx_userlogins_user_id on public.userlogins using btree (user_id) tablespace pg_default;
+```
+
+### users Table (`auth.users`)
+```sql
+create table
+  auth.users (
+    instance_id uuid null,
+    id uuid not null,
+    aud character varying(255) null,
+    role character varying(255) null,
+    email character varying(255) null,
+    encrypted_password character varying(255) null,
+    email_confirmed_at timestamp with time zone null,
+    invited_at timestamp with time zone null,
+    confirmation_token character varying(255) null,
+    confirmation_sent_at timestamp with time zone null,
+    recovery_token character varying(255) null,
+    recovery_sent_at timestamp with time zone null,
+    email_change_token_new character varying(255) null,
+    email_change character varying(255) null,
+    email_change_sent_at timestamp with time zone null,
+    last_sign_in_at timestamp with time zone null,
+    raw_app_meta_data jsonb null,
+    raw_user_meta_data jsonb null,
+    is_super_admin boolean null,
+    created_at timestamp with time zone null,
+    updated_at timestamp with time zone null,
+    phone text null default null::character varying,
+    phone_confirmed_at timestamp with time zone null,
+    phone_change text null default ''::character varying,
+    phone_change_token character varying(255) null default ''::character varying,
+    phone_change_sent_at timestamp with time zone null,
+    confirmed_at timestamp with time zone generated always as (least(email_confirmed_at, phone_confirmed_at)) stored null,
+    email_change_token_current character varying(255) null default ''::character varying,
+    email_change_confirm_status smallint null default 0,
+    banned_until timestamp with time zone null,
+    reauthentication_token character varying(255) null default ''::character varying,
+    reauthentication_sent_at timestamp with time zone null,
+    is_sso_user boolean not null default false,
+    deleted_at timestamp with time zone null,
+    is_anonymous boolean not null default false,
+    constraint users_pkey primary key (id),
+    constraint users_phone_key unique (phone),
+    constraint users_email_change_confirm_status_check check (
+      (
+        (email_change_confirm_status >= 0)
+        and (email_change_confirm_status <= 2)
+      )
+    )
+  ) tablespace pg_default;
+
+create index if not exists users_instance_id_idx on auth.users using btree (instance_id) tablespace pg_default;
+
+create index if not exists users_instance_id_email_idx on auth.users using btree (instance_id, lower((email)::text)) tablespace pg_default;
+
+create unique index if not exists confirmation_token_idx on auth.users using btree (confirmation_token) tablespace pg_default
+where
+  ((confirmation_token)::text !~ '^[0-9 ]*$'::text);
+
+create unique index if not exists recovery_token_idx on auth.users using btree (recovery_token) tablespace pg_default
+where
+  ((recovery_token)::text !~ '^[0-9 ]*$'::text);
+
+create unique index if not exists email_change_token_current_idx on auth.users using btree (email_change_token_current) tablespace pg_default
+where
+  (
+    (email_change_token_current)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists email_change_token_new_idx on auth.users using btree (email_change_token_new) tablespace pg_default
+where
+  (
+    (email_change_token_new)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists reauthentication_token_idx on auth.users using btree (reauthentication_token) tablespace pg_default
+where
+  (
+    (reauthentication_token)::text !~ '^[0-9 ]*$'::text
+  );
+
+create unique index if not exists users_email_partial_key on auth.users using btree (email) tablespace pg_default
+where
+  (is_sso_user = false);
+
+create index if not exists users_is_anonymous_idx on auth.users using btree (is_anonymous) tablespace pg_default;
+
+create trigger on_auth_user_created
+after insert on auth.users for each row
+execute function create_user_profile_v2 ();
+
+---
+
+## Goal Type System
+
+### Goal Type Options
+1. Available Types:
+   ```typescript
+   const GOAL_TYPES = ['Personal', 'Career', 'Professional'] as const;
+   ```
+   - Defined in `types/goal-type.ts`
+   - Used consistently across all goal forms
+   - Type-safe implementation using TypeScript
+
+2. UI Implementation:
+   - Dropdown select component
+   - Used in both new goal creation and goal editing
+   - Consistent styling with other form elements
+   - Clear placeholder text: "Select goal type"
+
+3. Form Integration:
+   - Required field in goal creation
+   - Editable in goal details when in edit mode
+   - Read-only display when not editing
+   - Maintains previous value during updates
+
+### Goal Refresh System
+
+1. Auto-refresh Implementation:
+   - Immediate refresh after any database operation
+   - Uses Supabase real-time updates
+   - Maintains UI consistency
+
+2. Refresh Triggers:
+   - Goal updates
+   - Goal completion
+   - Goal deletion
+   - Milestone changes affecting goal
+
+3. Refresh Process:
+   ```typescript
+   const refreshGoal = async (goalId) => {
+     const { data, error } = await supabase
+       .from("goals")
+       .select("*")
+       .eq("goal_id", goalId)
+       .single();
+     
+     if (data) onUpdate();
+   };
+   ```
+
+4. State Management:
+   - Centralized update handling
+   - Prevents stale data display
+   - Maintains data consistency
+   - Improves user experience
+
+---
+
+## Milestone Completion Celebration
+- Confetti animation triggers when a milestone is completed
+- Uses the same `triggerCelebration` utility as goal completion
+- Random number of confetti bursts (2-5 times)
+- Configuration:
+  - Spread: 360 degrees
+  - Star-shaped particles
+  - Colors: Gold, Orange, Red-Orange, Purple, Royal Blue
+  - Gravity and decay effects for natural animation
+  - Particles originate from random positions
+  - 40 particles per burst
+  - 750ms delay between bursts
+
+---
+
+## Authentication and Password Management
+
+### Environment Configuration
+1. **Site URL Configuration**
+   - Environment Variable: `NEXT_PUBLIC_SITE_URL`
+   - Format: `# NEXT_PUBLIC_SITE_URL=http://your-domain.com`
+   - Purpose: Enables dynamic domain handling for authentication redirects
+   - Location: `.env.local`
+
+2. **Supabase URL Configuration**
+   - Required Setup: Configure redirect URLs in Supabase dashboard
+   - Path: `https://supabase.com/dashboard/project/{PROJECT_ID}/auth/url-configuration`
+   - Add your domain to the redirect URLs list
+   - Format: `http://your-domain.com/**`
+   - Note: Replace {PROJECT_ID} with your Supabase project ID
+
+### Password Reset Flow
+1. **Forgot Password Flow**
+   - Route: `/auth/forgot-password`
+   - Component: `ForgotPasswordForm`
+   - Functionality: 
+     - Allows users to request a password reset via email
+     - Uses dynamic site URL for redirects
+     - Non-authenticated route accessible to logged-out users
+
+2. **Password Reset Flow**
+   - Routes:
+     - `/auth/confirm` - Handles OTP verification
+     - `/auth/reset-password` - New password entry form
+     - `/auth/error` - Error handling page
+   - Components:
+     - `ResetPasswordForm`
+   - Implementation: 
+     - Uses Supabase PKCE flow for secure password reset
+     - Maintains domain consistency across redirects
+     - All routes are non-authenticated and accessible to logged-out users
+
+3. **URL Handling**
+   - Utility: `url-utils.ts`
+   - Functions:
+     - `getBaseUrl()` - Dynamic base URL detection
+       - Browser: Uses `window.location.origin`
+       - Server: Uses `NEXT_PUBLIC_SITE_URL` environment variable
+     - `getAuthRedirectUrl()` - Generates full auth redirect URLs
+   - Fallback: Defaults to `http://localhost:3000` if environment variable is not set
+
+4. **Public Routes**
+   The following routes are accessible without authentication:
+   ```typescript
+   const publicRoutes = [
+     '/auth/login',
+     '/auth/register',
+     '/auth/forgot-password',
+     '/auth/reset-password',
+     '/auth/confirm',
+     '/auth/error',
+     '/',
+     '/api/stripe/webhook'
+   ];
+   ```
+
+### Important Setup Steps
+1. Configure `.env.local`:
+   ```plaintext
+   # NEXT_PUBLIC_SITE_URL=http://your-domain.com
+   

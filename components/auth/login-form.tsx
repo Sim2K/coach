@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { checkUserActivity, showActivityStatus } from "@/lib/auth/loginChecks";
+import Link from "next/link";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -120,9 +121,18 @@ export function LoginForm() {
             </FormItem>
           )}
         />
-        <Button className="w-full mb-2" type="submit" disabled={isLoading}>
-          {isLoading ? "Logging in..." : "Log In"}
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Signing in..." : "Sign In"}
         </Button>
+        
+        <div className="text-center mt-4">
+          <Link
+            href="/auth/forgot-password"
+            className="text-sm text-indigo-600 hover:text-indigo-500"
+          >
+            Forgot your password?
+          </Link>
+        </div>
       </form>
     </Form>
   );
