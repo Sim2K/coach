@@ -3,10 +3,11 @@
 import { useEffect, Suspense } from "react";
 import { Card } from "@/components/ui/card";
 import { PasswordSection } from "@/components/settings/password-section/password-form";
+import { EmailSection } from "@/components/settings/email-section/email-form";
 import { BillingSection } from "@/components/settings/billing-section/payment-form";
 import { PaymentsSection } from "@/components/settings/payments-section";
 import { Sidebar } from "@/components/sidebar";
-import { Lock, CreditCard, Receipt, Menu } from "lucide-react";
+import { Lock, Mail, CreditCard, Receipt, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -16,7 +17,7 @@ import { Button } from "@/components/ui/button";
 
 function SettingsContent() {
   const searchParams = useSearchParams();
-  const currentTab = searchParams.get("tab") || "password";
+  const currentTab = searchParams.get("tab") || "email";
   const status = searchParams.get("status");
   const sessionId = searchParams.get("session_id");
   const { toast } = useToast();
@@ -36,6 +37,7 @@ function SettingsContent() {
   }, [status, sessionId, toast]);
 
   const tabs = [
+    { name: "Email", href: "/settings?tab=email", icon: Mail },
     { name: "Password", href: "/settings?tab=password", icon: Lock },
     { name: "Billings", href: "/settings?tab=billing", icon: CreditCard },
     { name: "Payments", href: "/settings?tab=payments", icon: Receipt },
@@ -164,10 +166,8 @@ function SettingsContent() {
           </div>
 
           <div className="mt-8">
-            <Card className={cn(
-              "p-6",
-              "max-w-full overflow-x-hidden"
-            )}>
+            <Card className="p-6">
+              {currentTab === "email" && <EmailSection />}
               {currentTab === "password" && <PasswordSection />}
               {currentTab === "billing" && <BillingSection />}
               {currentTab === "payments" && <PaymentsSection />}

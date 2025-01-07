@@ -67,4 +67,43 @@ export class AuthService {
       };
     }
   }
+
+  static async updateEmail(newEmail: string): Promise<{ success: boolean; error?: AuthError }> {
+    try {
+      // Get current user to verify session
+      const user = await this.getCurrentUser();
+      
+      // Update email
+      const { error: updateError } = await supabase.auth.updateUser({
+        email: newEmail
+      });
+
+      if (updateError) {
+        return {
+          success: false,
+          error: {
+            message: updateError.message,
+            code: updateError.name
+          }
+        };
+      }
+
+      return { 
+        success: true,
+        error: {
+          message: "Confirmation emails have been sent. Please check both your current and new email addresses.",
+          code: "CONFIRMATION_REQUIRED"
+        }
+      };
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      return {
+        success: false,
+        error: {
+          message: error instanceof Error ? error.message : "An unexpected error occurred",
+          code: "UNKNOWN_ERROR"
+        }
+      };
+    }
+  }
 }
