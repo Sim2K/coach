@@ -1,0 +1,1626 @@
+    openapi: 3.1.0
+    info:
+      title: User API
+      description: API for logging in, updating user profiles, retrieving views, managing goals, engagements, feedback, milestones, privacy/security settings, and user preferences.
+      version: 1.10.0
+    servers:
+      - url: https://gpoymiyamqnfkpucxjcz.supabase.co
+
+    paths:
+      /rest/v1/rpc/login_the_user:
+        post:
+          summary: Login the user
+          x-openai-isConsequential: false
+          description: This endpoint allows the user to log in using a personalised key.
+          operationId: loginUser
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    key_hashed:
+                      type: string
+                      description: The personalised key used for logging in the user where the email part is converted to lower case.
+                      example: hi@domain.com:phrase
+                  required:
+                    - key_hashed
+          responses:
+            "200":
+              description: User logged in successfully
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Success message.
+                        example: Login successful
+            "400":
+              description: Bad Request. Invalid data supplied.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message describing the issue.
+                        example: Invalid key_hashed provided.
+            "401":
+              description: Unauthorized. Authentication failed.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for authentication failure.
+                        example: Authentication failed. Invalid key_hashed.
+
+      /rest/v1/rpc/ac_update_tbl_userprofile:
+        post:
+          summary: Update user profile
+          x-openai-isConsequential: false
+          description: This endpoint allows updating the user profile with multiple fields.
+          operationId: updateUserProfile
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    incoaching_style_preference:
+                      type: string
+                      description: Coaching style preference.
+                      example: value
+                    infeedback_frequency:
+                      type: string
+                      description: Feedback frequency preference.
+                      example: value
+                    infirst_name:
+                      type: string
+                      description: User's first name.
+                      example: John
+                    inlast_name:
+                      type: string
+                      description: User's last name.
+                      example: Doe
+                    innick_name:
+                      type: string
+                      description: User's nickname.
+                      example: Johnny
+                    ininduction_complete:
+                      type: string
+                      description: Whether the user has completed induction.
+                      example: true
+                    inprivacy_settings:
+                      type: string
+                      description: User's privacy settings.
+                      example: private
+                    incountry:
+                      type: string
+                      description: User's country.
+                      example: USA
+                    incity:
+                      type: string
+                      description: User's city.
+                      example: New York
+                    ingender:
+                      type: string
+                      description: User's gender.
+                      example: Male
+                    inage:
+                      type: integer
+                      description: User's age.
+                      example: 30
+                    inlast_donation:
+                      type: string
+                      format: date
+                      description: Date of users last donation + 31 days.
+                      example: 2024-11-03
+                    theuserskey:
+                      type: string
+                      description: The unique key identifying the user.
+                      example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+                  required:
+                    - theuserskey
+          responses:
+            "200":
+              description: User profile updated successfully
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Success message.
+                        example: Profile updated successfully.
+            "400":
+              description: Bad Request. Invalid data supplied.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message describing the issue.
+                        example: Invalid data provided.
+            "401":
+              description: Unauthorized. Authentication failed.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for authentication failure.
+                        example: Authentication failed. Invalid API key.
+
+      /rest/v1/rpc/ac_get_selected_view:
+        post:
+          summary: Retrieve a specific view for a user
+          x-openai-isConsequential: false
+          description: This endpoint retrieves a selected view based on the user's ID and the view name.
+          operationId: getSelectedView
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    user_idx:
+                      type: string
+                      description: The unique identifier of the user.
+                      example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+                    view_name:
+                      type: string
+                      description: The name of the view to retrieve.
+                      example: public.view_user_profile
+                  required:
+                    - user_idx
+                    - view_name
+          responses:
+            "200":
+              description: View data retrieved successfully
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          description: The data returned from the selected view.
+                        example:
+                          - id: 1
+                            first_name: John
+                            last_name: Doe
+                            email: john.doe@example.com
+            "400":
+              description: Bad Request. Invalid data supplied.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message describing the issue.
+                        example: Invalid user_idx or view_name provided.
+            "401":
+              description: Unauthorized. Authentication failed.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for authentication failure.
+                        example: Authentication failed. Invalid API key.
+
+      /rest/v1/rpc/ac_tbl_goal_functions:
+        post:
+          summary: Manage user goals
+          x-openai-isConsequential: false
+          description: This endpoint allows inserting, updating, or deleting goals for a user.
+          operationId: manageGoals
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    action_type:
+                      type: string
+                      description: The type of action to perform on the goal (insert, update, delete).
+                      example: insert
+                      enum:
+                        - insert
+                        - update
+                        - delete
+                    ingoal_description:
+                      type: string
+                      description: Description of the goal.
+                      example: Your Goal Description is TEST as well
+                    ingoal_title:
+                      type: string
+                      description: Title of the goal.
+                      example: Creating new SaaS App
+                    ingoal_type:
+                      type: string
+                      description: The type of the goal.
+                      example: Your Goal Type is TEST
+                    theuserskey:
+                      type: string
+                      description: The unique key identifying the user.
+                      example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+                    ingoal_id:
+                      type: string
+                      description: The ID of the goal (only required for update or delete actions).
+                      example: 5066f376-5fa9-4182-9f7b-25496deb0138
+                    inis_completed:
+                      type: string
+                      description: Whether the goal is completed (optional).
+                      example: FALSE
+                    inprogress:
+                      type: number
+                      format: float
+                      description: Progress of the goal as a percentage (optional).
+                      example: 0.00
+                    ineffort_level:
+                      type: number
+                      format: float
+                      description: Number between 1 - 5 representing energy required to complete a goal.
+                      example: 3
+                    intarget_date:
+                      type: string
+                      format: date
+                      description: Target date for achieving the goal (optional).
+                      example: 2025-01-01
+                  required:
+                    - action_type
+                    - ingoal_description
+                    - ingoal_type
+                    - theuserskey
+                    - ingoal_title
+          responses:
+            "200":
+              description: Goal action performed successfully
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Success message.
+                        example: Goal action completed successfully.
+            "400":
+              description: Bad Request. Invalid data supplied.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message describing the issue.
+                        example: Invalid data provided.
+            "401":
+              description: Unauthorized. Authentication failed.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for authentication failure.
+                        example: Authentication failed. Invalid API key.
+
+      /rest/v1/rpc/ac_tbl_engagement_functions:
+        post:
+          summary: Manage user engagements
+          x-openai-isConsequential: false
+          description: This endpoint allows inserting, updating or deleting engagements for a user.
+          operationId: manageEngagements
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    action_type:
+                      type: string
+                      description: The type of action to perform on the engagement (insert, update, delete).
+                      example: insert
+                      enum:
+                        - insert
+                        - delete
+                        - update
+                    theuserskey:
+                      type: string
+                      description: The unique key identifying the user.
+                      example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+                    inengagement_id:
+                      type: string
+                      description: The ID of the engagement (only required for delete action).
+                      example: dce72215-12e6-4d32-8371-dbb5d0bb0d55
+                    ininteraction_type:
+                      type: string
+                      description: The type of interaction (e.g., Chat, Email, Call).
+                      example: Chat
+                    innotes:
+                      type: string
+                      description: Notes or details about the engagement.
+                      example: Some notes on the engagement
+                    inresponse_time:
+                      type: string
+                      format: time
+                      description: Response time for the engagement in HH:MM:SS format.
+                      example: 00:05:00
+                    insentiment:
+                      type: string
+                      description: Sentiment analysis of the engagement (e.g., Positive, Neutral, Negative).
+                      example: Positive
+                    infk_milestones:
+                      type: string
+                      format: uuid
+                      description: The ID of the associated milestone, if applicable.
+                      example: 5a5e3a5c-e8e7-11eb-9a03-0242ac130003
+                    infk_goals:
+                      type: string
+                      format: uuid
+                      description: The ID of the associated goal, if applicable.
+                      example: 6b7e3b3c-f5f7-11eb-8a03-0242ac130003
+                  required:
+                    - action_type
+                    - theuserskey
+                    - ininteraction_type
+                    - innotes
+                    - inresponse_time
+                    - insentiment
+                    - infk_goals
+          responses:
+            "200":
+              description: Engagement action performed successfully
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Success message.
+                        example: Engagement action completed successfully.
+            "400":
+              description: Bad Request. Invalid data supplied.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message describing the issue.
+                        example: Invalid data provided.
+            "401":
+              description: Unauthorized. Authentication failed.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for authentication failure.
+                        example: Authentication failed. Invalid API key.
+
+      /rest/v1/rpc/ac_tbl_feedback_functions:
+        post:
+          summary: Manage user feedback
+          x-openai-isConsequential: false
+          description: This endpoint allows inserting or deleting feedback for a user.
+          operationId: manageFeedback
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    action_type:
+                      type: string
+                      description: The type of action to perform on the feedback (insert, update, delete).
+                      example: insert
+                      enum:
+                        - insert
+                        - delete
+                        - update
+                    theuserskey:
+                      type: string
+                      description: The unique key identifying the user.
+                      example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+                    inaction_taken:
+                      type: string
+                      description: The action taken based on the feedback.
+                      example: Follow up session required
+                    infeedback_content:
+                      type: string
+                      description: The content of the feedback.
+                      example: Got the job done faster than I thought!
+                    infeedback_type:
+                      type: string
+                      description: The type of feedback (e.g., positive, negative, neutral).
+                      example: positive
+                    infeedback_id:
+                      type: string
+                      description: The ID of the feedback (only required for delete action).
+                      example: deddb1d8-48b9-4b59-a454-e5be1b008de8
+                    infk_milestones:
+                      type: string
+                      format: uuid
+                      description: The ID of the associated milestone, if applicable.
+                      example: 5a5e3a5c-e8e7-11eb-9a03-0242ac130003
+                    infk_engagement:
+                      type: string
+                      format: uuid
+                      description: The ID of the associated engagement, if applicable.
+                      example: 6b7e3b3c-f5f7-11eb-8a03-0242ac130003
+                    infk_goals:
+                      type: string
+                      format: uuid
+                      description: The ID of the associated goal.
+                      example: 6b7e3b3c-f5f7-11eb-8a03-0242ac130003
+                  required:
+                    - action_type
+                    - theuserskey
+                    - inaction_taken
+                    - infeedback_content
+                    - infeedback_type
+                    - infk_goals
+          responses:
+            "200":
+              description: Feedback action performed successfully
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Success message.
+                        example: Feedback action completed successfully.
+            "400":
+              description: Bad Request. Invalid data supplied.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message describing the issue.
+                        example: Invalid data provided.
+            "401":
+              description: Unauthorized. Authentication failed.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for authentication failure.
+                        example: Authentication failed. Invalid API key.
+
+      /rest/v1/rpc/ac_tbl_milestones_functions:
+        post:
+          summary: Manage user milestones
+          x-openai-isConsequential: false
+          description: This endpoint allows inserting, updating, or deleting milestones for a user.
+          operationId: manageMilestones
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    action_type:
+                      type: string
+                      description: The type of action to perform on the milestone (insert, update, delete).
+                      example: update
+                      enum:
+                        - insert
+                        - update
+                        - delete
+                    theuserskey:
+                      type: string
+                      description: The unique key identifying the user.
+                      example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+                    ingoal_id:
+                      type: string
+                      description: The ID of the goal associated with the milestone.
+                      example: c28918e5-f74c-462d-b4ff-02bdf9c229ab
+                    inmilestone_id:
+                      type: string
+                      description: The ID of the milestone i.e. milestone_id (only required for update or delete actions).
+                      example: 0ad311db-5559-459f-8bf9-23ca2a69aadf
+                    inmilestone_description:
+                      type: string
+                      description: The description of the milestone.
+                      example: Completed Project Mapping and Planning!
+                    intarget_date:
+                      type: string
+                      format: date
+                      description: The target date for the milestone.
+                      example: 2024-11-27
+                    inachieved:
+                      type: string
+                      description: Whether the milestone has been achieved (optional).
+                      example: FALSE
+                    inachievement_date:
+                      type: string
+                      format: date
+                      description: The date when the milestone was achieved (optional).
+                      example: 2024-11-20
+                    inmilestone_review_needed:
+                      type: boolean
+                      description: Always set to false to state that the goal has been reviewed.
+                      default: false
+                    inprevious_milestone_data:
+                      type: string
+                      description: Always set to NULL to state that the goal has been reviewed. Always NULL.
+                      example: NULL
+                  required:
+                    - action_type
+                    - theuserskey
+                    - ingoal_id
+                    - inmilestone_description
+                    - intarget_date
+          responses:
+            "200":
+              description: Milestone action performed successfully
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Success message.
+                        example: Milestone action completed successfully.
+            "400":
+              description: Bad Request. Invalid data supplied.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message describing the issue.
+                        example: Invalid data provided.
+            "401":
+              description: Unauthorized. Authentication failed.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for authentication failure.
+                        example: Authentication failed. Invalid API key.
+
+      /rest/v1/rpc/ac_tbl_privacysecuritysettings_functions:
+        post:
+          summary: Manage user privacy and security settings
+          x-openai-isConsequential: false
+          description: This endpoint allows inserting, updating, or deleting privacy and security settings for a user.
+          operationId: managePrivacySecuritySettings
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    action_type:
+                      type: string
+                      description: The type of action to perform on the settings (insert, update, delete).
+                      example: insert
+                      enum:
+                        - insert
+                        - update
+                        - delete
+                    theuserskey:
+                      type: string
+                      description: The unique key identifying the user.
+                      example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+                    insecurity_id:
+                      type: string
+                      description: The ID of the security setting (optional for insert, required for update or delete).
+                      example: 746b9405-2505-404a-9182-c3c66afc076d
+                    insetting_type:
+                      type: string
+                      description: The type of setting, such as "communication frequency."
+                      example: communication frequency
+                    insetting_value:
+                      type: string
+                      description: The value of the setting, such as "Every other day."
+                      example: Every other day
+                  required:
+                    - action_type
+                    - theuserskey
+                    - insetting_type
+                    - insetting_value
+          responses:
+            "200":
+              description: Privacy or security setting action performed successfully
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Success message.
+                        example: Setting action completed successfully.
+            "400":
+              description: Bad Request. Invalid data supplied.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message describing the issue.
+                        example: Invalid data provided.
+            "401":
+              description: Unauthorized. Authentication failed.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for authentication failure.
+                        example: Authentication failed. Invalid API key.
+
+      /rest/v1/rpc/ac_tbl_userpreferences_functions:
+        post:
+          summary: Manage user preferences
+          x-openai-isConsequential: false
+          description: This endpoint allows inserting, updating, or deleting user preferences.
+          operationId: manageUserPreferences
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    action_type:
+                      type: string
+                      description: The type of action to perform on the preferences (insert, update, delete).
+                      example: insert
+                      enum:
+                        - insert
+                        - update
+                        - delete
+                    theuserskey:
+                      type: string
+                      description: The unique key identifying the user.
+                      example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+                    inpreference_id:
+                      type: string
+                      description: The ID of the preference (optional for insert, required for update or delete).
+                      example: a5d980d0-40ad-4b73-bb4d-6400298f00ab
+                    inpreference_type:
+                      type: string
+                      description: The type of preference, such as "Language 3."
+                      example: Language 3
+                    inpreference_value:
+                      type: string
+                      description: The value of the preference, such as "English Ghetto."
+                      example: English Ghetto
+                  required:
+                    - action_type
+                    - theuserskey
+                    - inpreference_type
+                    - inpreference_value
+          responses:
+            "200":
+              description: User preference action performed successfully
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Success message.
+                        example: Preference action completed successfully.
+            "400":
+              description: Bad Request. Invalid data supplied.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message describing the issue.
+                        example: Invalid data provided.
+            "401":
+              description: Unauthorized. Authentication failed.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for authentication failure.
+                        example: Authentication failed. Invalid API key.
+
+      /auth/v1/signup:
+        post:
+          summary: User Signup
+          x-openai-isConsequential: false
+          description: Create a new user account by providing an email and password.
+          operationId: createUserAccount
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/SignupRequest"
+          responses:
+            "200":
+              description: User account created successfully.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: Unique identifier of the created user.
+                        example: 123456
+                      email:
+                        type: string
+                        description: Email of the created user.
+                        example: somebody@gmail.com
+            "400":
+              description: Bad Request. Required fields are missing or invalid.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message detailing the issue.
+                        example: "Invalid email format."
+            "500":
+              description: Server Error. Account creation failed due to an internal error.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for internal failure.
+                        example: "Internal server error. Please try again."
+
+      /rest/v1/rpc/ac_api_key_create_v2:
+        post:
+          summary: Create API Key
+          x-openai-isConsequential: false
+          description: Creates a new API key for a given user by their ID, email, and login key.
+          operationId: createApiKey
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/CreateApiKeyRequest"
+          responses:
+            "200":
+              description: API key created successfully.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      api_key:
+                        type: string
+                        description: The generated API key for the user.
+                        example: "123e4567-e89b-12d3-a456-426614174000"
+            "400":
+              description: Bad Request. Required fields are missing or invalid.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message explaining what was incorrect.
+                        example: "Invalid user ID format."
+            "500":
+              description: Server Error. API key creation failed due to an internal issue.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for internal failure.
+                        example: "Internal server error. Please try again."
+
+      /rest/v1/rpc/ac_tbl_updates_functions:
+        post:
+          summary: Manage user updates
+          x-openai-isConsequential: false
+          description: This endpoint allows inserting or deleting updates for a user.
+          operationId: manageUpdates
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    action_type:
+                      type: string
+                      description: The type of action to perform on the update (insert, update, delete).
+                      example: insert
+                      enum:
+                        - insert
+                        - delete
+                        - update
+                    theuserskey:
+                      type: string
+                      description: The unique key identifying the user.
+                      example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+                    inupdate_id:
+                      type: string
+                      description: The ID of the update (only required for delete action).
+                      example: d3e04b7d-3768-4a32-b6c9-4b5a973c8321
+                    inupdate_type:
+                      type: string
+                      description: The type of update (e.g., change, addition, deletion).
+                      example: change
+                    inprevious_value:
+                      type: string
+                      description: The previous value before the update.
+                      example: Previous data value
+                    innew_value:
+                      type: string
+                      description: The new value after the update.
+                      example: New data value
+                    inupdate_reason:
+                      type: string
+                      description: The reason for the update.
+                      example: To correct an error
+                    insource:
+                      type: string
+                      description: The source of the update (e.g., system, user input).
+                      example: system
+                    innotes:
+                      type: string
+                      description: Additional notes related to the update.
+                      example: Update initiated automatically
+                    inupdate_title:
+                      type: string
+                      description: Short title related to the update.
+                      example: Change of pace
+                    infk_goal:
+                      type: string
+                      format: uuid
+                      description: The ID of the associated goal, if applicable.
+                      example: 5a5e3a5c-e8e7-11eb-9a03-0242ac130003
+                    infk_milestone:
+                      type: string
+                      format: uuid
+                      description: The ID of the associated milestone, if applicable.
+                      example: 6b7e3b3c-f5f7-11eb-8a03-0242ac130003
+                  required:
+                    - action_type
+                    - theuserskey
+                    - inupdate_title
+                    - infk_goal
+          responses:
+            "200":
+              description: Update action performed successfully
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Success message.
+                        example: Update action completed successfully.
+            "400":
+              description: Bad Request. Invalid data supplied.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message describing the issue.
+                        example: Invalid data provided.
+            "401":
+              description: Unauthorized. Authentication failed.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for authentication failure.
+                        example: Authentication failed. Invalid API key.
+
+      /rest/v1/rpc/ac_tbl_smartgoal_functions:
+        post:
+          summary: Manage user smart goals
+          x-openai-isConsequential: false
+          description: This endpoint allows inserting, updating, or deleting smart goals for a user.
+          operationId: manageSmartGoals
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    action_type:
+                      type: string
+                      description: The type of action to perform on the smart goal (insert, update, delete).
+                      example: insert
+                      enum:
+                        - insert
+                        - update
+                        - delete
+                    theuserskey:
+                      type: string
+                      description: The unique key identifying the user.
+                      example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+                    insmartgoal_id:
+                      type: string
+                      description: The ID of the smart goal (required for update and delete actions).
+                      example: d3e04b7d-3768-4a32-b6c9-4b5a973c8321
+                    inspecific:
+                      type: string
+                      description: The specific part of the SMART goal.
+                      example: Increase sales revenue by 10%
+                    inmeasurable:
+                      type: string
+                      description: The measurable part of the SMART goal.
+                      example: Use quarterly sales reports to measure revenue increase
+                    inachievable:
+                      type: string
+                      description: The achievable part of the SMART goal.
+                      example: Set realistic targets based on past performance
+                    inrelevant:
+                      type: string
+                      description: The relevant part of the SMART goal.
+                      example: Aligns with company growth objectives
+                    intime_bound:
+                      type: string
+                      format: date
+                      description: The time-bound deadline for the SMART goal in YYYY-MM-DD format.
+                      example: 2024-12-31
+                    insmart_progress:
+                      type: number
+                      format: float
+                      description: The progress towards the SMART goal.
+                      example: 50.5
+                    instatus:
+                      type: string
+                      description: The status of the SMART goal (e.g., Pending, In Progress, Completed).
+                      example: In Progress
+                    ingoal_id:
+                      type: string
+                      format: uuid
+                      description: The ID of the associated goal.
+                      example: 5a5e3a5c-e8e7-11eb-9a03-0242ac130003
+                  required:
+                    - action_type
+                    - theuserskey
+                    - ingoal_id
+          responses:
+            "200":
+              description: Smart goal action performed successfully
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Success message.
+                        example: Smart goal action completed successfully.
+            "400":
+              description: Bad Request. Invalid data supplied.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message describing the issue.
+                        example: Invalid data provided.
+            "401":
+              description: Unauthorized. Authentication failed.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Error message for authentication failure.
+                        example: Authentication failed. Invalid API key.
+
+
+    components:
+      schemas:
+        LoginRequest:
+          type: object
+          properties:
+            key_hashed:
+              type: string
+              description: The hashed key used for logging in.
+              example: 1234ABcd-abcd-5678-12ab-12ab34nb87yg-1f56kjhg-22dd-hgf4-rre4-fg546HJ7fgsD
+          required:
+            - key_hashed
+
+        UserProfileUpdateRequest:
+          type: object
+          properties:
+            incoaching_style_preference:
+              type: string
+              description: Coaching style preference.
+              example: value
+            infeedback_frequency:
+              type: string
+              description: Feedback frequency preference.
+              example: value
+            infirst_name:
+              type: string
+              description: User's first name.
+              example: John
+            inlast_name:
+              type: string
+              description: User's last name.
+              example: Doe
+            innick_name:
+              type: string
+              description: User's nickname.
+              example: Johnny
+            ininduction_complete:
+              type: string
+              description: Whether the user has completed induction.
+              example: true
+            inprivacy_settings:
+              type: string
+              description: User's privacy settings.
+              example: private
+            incountry:
+              type: string
+              description: User's country.
+              example: USA
+            incity:
+              type: string
+              description: User's city.
+              example: New York
+            ingender:
+              type: string
+              description: User's gender.
+              example: Male
+            inlast_donation:
+              type: string
+              format: date
+              description: Date of users last donation + 31 days.
+              example: 2024-11-03
+            inage:
+              type: integer
+              description: User's age.
+              example: 30
+            theuserskey:
+              type: string
+              description: The unique key identifying the user.
+              example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+          required:
+            - theuserskey
+
+        FeedbackRequest:
+          type: object
+          properties:
+            action_type:
+              type: string
+              description: The type of action to perform on the feedback (insert, update, delete).
+              example: insert
+              enum:
+                - insert
+                - delete
+                - update
+            theuserskey:
+              type: string
+              description: The unique key identifying the user.
+              example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+            inaction_taken:
+              type: string
+              description: The action taken based on the feedback.
+              example: Follow up session required
+            infeedback_content:
+              type: string
+              description: The content of the feedback.
+              example: Got the job done faster than I thought!
+            infeedback_type:
+              type: string
+              description: The type of feedback (e.g., positive, negative, neutral).
+              example: positive
+            infeedback_id:
+              type: string
+              description: The ID of the feedback (only required for delete action).
+              example: deddb1d8-48b9-4b59-a454-e5be1b008de8
+            infk_milestones:
+              type: string
+              format: uuid
+              description: The ID of the associated milestone, if applicable.
+              example: 5a5e3a5c-e8e7-11eb-9a03-0242ac130003
+            infk_engagement:
+              type: string
+              format: uuid
+              description: The ID of the associated engagement, if applicable.
+              example: 6b7e3b3c-f5f7-11eb-8a03-0242ac130003
+            infk_goals:
+              type: string
+              format: uuid
+              description: The ID of the associated goal.
+              example: 6b7e3b3c-f5f7-11eb-8a03-0242ac130003
+          required:
+            - action_type
+            - theuserskey
+            - inaction_taken
+            - infeedback_content
+            - infeedback_type
+            - infk_goals
+
+        ViewRequest:
+          type: object
+          properties:
+            user_idx:
+              type: string
+              description: The unique identifier of the user.
+              example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+            view_name:
+              type: string
+              description: The name of the view to retrieve.
+              example: public.view_user_profile
+          required:
+            - user_idx
+            - view_name
+
+        GoalRequest:
+          type: object
+          properties:
+            action_type:
+              type: string
+              description: The type of action to perform on the goal.
+              example: insert
+              enum:
+                - insert
+                - update
+                - delete
+            ingoal_description:
+              type: string
+              description: Description of the goal.
+              example: Your Goal Description is TEST as well
+            ingoal_title:
+              type: string
+              description: Title of the goal.
+              example: Creating new SaaS App
+            ingoal_type:
+              type: string
+              description: The type of the goal.
+              example: Your Goal Type is TEST
+            theuserskey:
+              type: string
+              description: The unique key identifying the user.
+              example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+            ingoal_id:
+              type: string
+              description: The ID of the goal (only required for update or delete actions).
+              example: 5066f376-5fa9-4182-9f7b-25496deb0138
+            inis_completed:
+              type: string
+              description: Whether the goal is completed (optional).
+              example: FALSE
+            inprogress:
+              type: number
+              format: float
+              description: Progress of the goal as a percentage (optional).
+              example: 0.00
+            ineffort_level:
+              type: number
+              format: float
+              description: Number between 1 - 5 representing energy required to complete goal  (optional).
+              example: 3
+            intarget_date:
+              type: string
+              format: date
+              description: Target date for achieving the goal (optional).
+              example: 2025-01-01
+          required:
+            - action_type
+            - ingoal_description
+            - ingoal_type
+            - theuserskey
+            - ingoal_title
+
+        EngagementRequest:
+          type: object
+          properties:
+            action_type:
+              type: string
+              description: The type of action to perform on the engagement (insert, update, delete).
+              example: insert
+              enum:
+                - insert
+                - delete
+                - update
+            theuserskey:
+              type: string
+              description: The unique key identifying the user.
+              example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+            inengagement_id:
+              type: string
+              description: The ID of the engagement (only required for delete action).
+              example: dce72215-12e6-4d32-8371-dbb5d0bb0d55
+            ininteraction_type:
+              type: string
+              description: The type of interaction (e.g., Chat, Email, Call).
+              example: Chat
+            innotes:
+              type: string
+              description: Notes or details about the engagement.
+              example: Some notes on the engagement
+            inresponse_time:
+              type: string
+              format: time
+              description: Response time for the engagement in HH:MM:SS format.
+              example: 00:05:00
+            insentiment:
+              type: string
+              description: Sentiment analysis of the engagement (e.g., Positive, Neutral, Negative).
+              example: Positive
+            infk_milestones:
+              type: string
+              format: uuid
+              description: The ID of the associated milestone, if applicable.
+              example: 5a5e3a5c-e8e7-11eb-9a03-0242ac130003
+            infk_goals:
+              type: string
+              format: uuid
+              description: The ID of the associated goal, if applicable.
+              example: 6b7e3b3c-f5f7-11eb-8a03-0242ac130003
+          required:
+            - action_type
+            - theuserskey
+            - ininteraction_type
+            - innotes
+            - inresponse_time
+            - insentiment
+            - infk_goals
+
+        MilestoneRequest:
+          type: object
+          properties:
+            action_type:
+              type: string
+              description: The type of action to perform on the milestone (insert, update, delete).
+              example: update
+              enum:
+                - insert
+                - update
+                - delete
+            theuserskey:
+              type: string
+              description: The unique key identifying the user.
+              example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+            ingoal_id:
+              type: string
+              description: The ID of the goal associated with the milestone.
+              example: c28918e5-f74c-462d-b4ff-02bdf9c229ab
+            inmilestone_id:
+              type: string
+              description: The ID of the milestone (only required for update or delete actions).
+              example: 0ad311db-5559-459f-8bf9-23ca2a69aadf
+            inmilestone_description:
+              type: string
+              description: The description of the milestone.
+              example: Completed Project Mapping and Planning!
+            intarget_date:
+              type: string
+              format: date
+              description: The target date for the milestone.
+              example: 2024-11-27
+            inachieved:
+              type: string
+              description: Whether the milestone has been achieved (optional).
+              example: FALSE
+            inachievement_date:
+              type: string
+              format: date
+              description: The date when the milestone was achieved (optional).
+              example: 2024-11-20
+            inmilestone_review_needed:
+              type: boolean
+              description: Always set to false to state that the goal has been reviewed.
+              example: false
+            inprevious_milestone_data:
+              type: string
+              description: Always set to NULL to state that the goal has been reviewed. Always NULL.
+              example: NULL
+          required:
+            - action_type
+            - theuserskey
+            - ingoal_id
+            - inmilestone_description
+            - intarget_date
+
+        PrivacySecuritySettingsRequest:
+          type: object
+          properties:
+            action_type:
+              type: string
+              description: The type of action to perform on the privacy/security settings (insert, update, delete).
+              example: insert
+              enum:
+                - insert
+                - update
+                - delete
+            theuserskey:
+              type: string
+              description: The unique key identifying the user.
+              example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+            insecurity_id:
+              type: string
+              description: The ID of the security setting (Only required for update or delete).
+              example: 746b9405-2505-404a-9182-c3c66afc076d
+            insetting_type:
+              type: string
+              description: The type of setting, such as "communication frequency."
+              example: communication frequency
+            insetting_value:
+              type: string
+              description: The value of the setting, such as "Every other day."
+              example: Every other day
+          required:
+            - action_type
+            - theuserskey
+            - insetting_type
+            - insetting_value
+
+        UserPreferencesRequest:
+          type: object
+          properties:
+            action_type:
+              type: string
+              description: The type of action to perform on the preferences (insert, update, delete).
+              example: insert
+              enum:
+                - insert
+                - update
+                - delete
+            theuserskey:
+              type: string
+              description: The unique key identifying the user.
+              example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+            inpreference_id:
+              type: string
+              description: The ID of the preference (optional for insert, required for update or delete).
+              example: a5d980d0-40ad-4b73-bb4d-6400298f00ab
+            inpreference_type:
+              type: string
+              description: The type of preference, such as "Language 3."
+              example: Language 3
+            inpreference_value:
+              type: string
+              description: The value of the preference, such as "English Ghetto."
+              example: English Ghetto
+          required:
+            - action_type
+            - theuserskey
+            - inpreference_type
+            - inpreference_value
+
+        SignupRequest:
+          type: object
+          description: Required fields for creating a new user account.
+          properties:
+            email:
+              type: string
+              format: email
+              description: User's email address, used for authentication.
+              example: somebody@gmail.com
+            password:
+              type: string
+              description: User's password for the account.
+              example: MyP4s50rd
+          required:
+            - email
+            - password
+
+        CreateApiKeyRequest:
+          type: object
+          description: Required fields for creating a new API key for a user.
+          properties:
+            users_id:
+              type: string
+              description: Unique identifier for the user.
+              example: c2ba4ba6-eefd-4e7c-9a3c-4d335f40eb2a
+            the_users_email:
+              type: string
+              format: email
+              description: Email address associated with the user.
+              example: sim.2k.uk@gmail.com
+            loginkey:
+              type: string
+              description: A login key for the user.
+              example: whatsup
+          required:
+            - users_id
+            - the_users_email
+            - loginkey
+
+        SmartGoalRequest:
+          type: object
+          properties:
+            action_type:
+              type: string
+              description: The type of action to perform on the smart goal or smart goals or smartgoal or smartgoals (insert, update, delete).
+              example: insert
+              enum:
+                - insert
+                - update
+                - delete
+            inspecific:
+              type: string
+              description: Specific smartgoal or smart goal statement, required for insert and update actions.
+              example: Specific Goal
+            inmeasurable:
+              type: string
+              description: Measurable aspect of the smartgoal or smart goal, required for insert and update actions.
+              example: Measurable Goal
+            inachievable:
+              type: string
+              description: Achievable aspect of the smartgoal or smart goal, required for insert and update actions.
+              example: Achievable Goal
+            inrelevant:
+              type: string
+              description: Relevant aspect of the smartgoal or smart goal, required for insert and update actions.
+              example: Relevant Goal
+            intime_bound:
+              type: string
+              format: date
+              description: Target date for achieving the smartgoal or smart goal, required for insert and update actions.
+              example: "2025-10-01"
+            insmart_progress:
+              type: number
+              format: float
+              description: Progress of the smartgoal or smart goal as a percentage, required for insert and update actions.
+              example: 50.00
+            instatus:
+              type: string
+              description: Current status of the smartgoal or smart goal, required for insert and update actions.
+              example: Pending
+            insmartgoal_id:
+              type: string
+              description: ID of the smart smartgoal or smart goal, required for delete and update actions.
+              example: 5cfc74fa-f45r-y667-bbd1-3ea3208frr56
+            theuserskey:
+              type: string
+              description: Unique key associated with the user, always required.
+              example: gg5674fa-7cb1-4472-bbd1-3ea32082168a
+            ingoal_id:
+              type: string
+              format: uuid
+              description: The ID of the associated goal.
+              example: 5a5e3a5c-e8e7-11eb-9a03-0242ac130003
+          required:
+            - action_type
+            - theuserskey
+            - ingoal_id
+
+        UpdateRequest:
+          type: object
+          properties:
+            action_type:
+              type: string
+              description: The type of action to perform on the update (insert, update, delete).
+              example: insert
+              enum:
+                - insert
+                - delete
+                - update
+            theuserskey:
+              type: string
+              description: The unique key identifying the user.
+              example: 23864d8e-eabe-4a52-8f09-ca623b22f0b3
+            inupdate_id:
+              type: string
+              description: The ID of the update (only required for delete action).
+              example: d3e04b7d-3768-4a32-b6c9-4b5a973c8321
+            inupdate_type:
+              type: string
+              description: The type of update (e.g., change, addition, deletion).
+              example: change
+            inprevious_value:
+              type: string
+              description: The previous value before the update.
+              example: Previous data value
+            innew_value:
+              type: string
+              description: The new value after the update.
+              example: New data value
+            inupdate_reason:
+              type: string
+              description: The reason for the update.
+              example: To correct an error
+            insource:
+              type: string
+              description: The source of the update (e.g., system, user input).
+              example: system
+            innotes:
+              type: string
+              description: Additional notes related to the update.
+              example: Update initiated automatically
+            inupdate_title:
+              type: string
+              description: Title related to the update.
+              example: Pace updated
+            infk_goal:
+              type: string
+              format: uuid
+              description: The ID of the associated goal, if applicable.
+              example: 5a5e3a5c-e8e7-11eb-9a03-0242ac130003
+            infk_milestone:
+              type: string
+              format: uuid
+              description: The ID of the associated milestone, if applicable.
+              example: 6b7e3b3c-f5f7-11eb-8a03-0242ac130003
+          required:
+            - action_type
+            - theuserskey
+            - inupdate_title
+            - infk_goal

@@ -73,7 +73,7 @@ export class AuthService {
       // Get current user to verify session
       const user = await this.getCurrentUser();
       
-      // Update email
+      // Update email in auth
       const { error: updateError } = await supabase.auth.updateUser({
         email: newEmail
       });
@@ -86,6 +86,18 @@ export class AuthService {
             code: updateError.name
           }
         };
+      }
+
+      // Update email in userprofile table
+      const { error: profileError } = await supabase
+        .from('userprofile')
+        .update({ user_email: newEmail })
+        .eq('user_id', user.id);
+
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+        // We don't return error here as the auth email update is already done
+        // and the user needs to confirm via email anyway
       }
 
       return { 
