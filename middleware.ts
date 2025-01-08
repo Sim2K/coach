@@ -19,7 +19,8 @@ export async function middleware(request: NextRequest) {
     '/auth/confirm',
     '/auth/error',
     '/',
-    '/api/stripe/webhook'
+    '/api/stripe/webhook',
+    '/api/webhook/email-scheduler'
   ];
   const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname);
 

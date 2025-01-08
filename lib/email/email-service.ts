@@ -3,8 +3,6 @@ import { EmailMessage, EmailOptions, EmailAttachment } from './types';
 import { validateEmailMessage } from './validation';
 import { emailQueue } from './queue';
 import { EMAIL_CONSTANTS } from './constants';
-import fs from 'fs';
-import path from 'path';
 
 // Create reusable transporter
 const createTransporter = () => {
@@ -57,17 +55,8 @@ const processAttachment = async (attachment: EmailAttachment) => {
   }
 
   if (typeof attachment.content === 'string') {
-    // Check if it's a file path
-    if (fs.existsSync(attachment.content)) {
-      return {
-        filename: attachment.filename || path.basename(attachment.content),
-        path: attachment.content,
-        contentType: attachment.contentType
-      };
-    }
-
-    // Check if it's a URL
-    if (attachment.content.startsWith('http')) {
+    // Handle URLs and data URIs
+    if (attachment.content.startsWith('http') || attachment.content.startsWith('data:')) {
       return {
         filename: attachment.filename,
         path: attachment.content,
@@ -75,16 +64,7 @@ const processAttachment = async (attachment: EmailAttachment) => {
       };
     }
 
-    // Check if it's a data URI
-    if (attachment.content.startsWith('data:')) {
-      return {
-        filename: attachment.filename,
-        path: attachment.content,
-        contentType: attachment.contentType
-      };
-    }
-
-    // Treat as raw content
+    // Handle raw content
     return {
       filename: attachment.filename,
       content: attachment.content,
@@ -108,7 +88,12 @@ export const sendEmail = async (
     });
 
     // Process attachments if they exist
-    let processedAttachments = [];
+    let processedAttachments: {
+      filename: string;
+      content?: Buffer | string;
+      path?: string;
+      contentType?: string;
+    }[] = [];
     if (message.attachments && message.attachments.length > 0) {
       try {
         processedAttachments = await Promise.all(
@@ -150,11 +135,7 @@ export const sendEmail = async (
       subject: message.subject,
       text: message.text,
       html: message.html,
-      attachments: message.attachments?.map(attachment => ({
-        filename: attachment.filename,
-        content: attachment.content,
-        contentType: attachment.contentType
-      }))
+      attachments: processedAttachments
     });
 
     console.log('Email sent successfully:', info);
@@ -192,10 +173,7 @@ export const queueEmail = async (
     },
   };
 
-  const queueId = await emailQueue.addToQueue(
-    enrichedMessage,
-    options?.priority || 'normal'
-  );
+  const queueId = await emailQueue.addToQueue(enrichedMessage, options);
 
   console.log('Email queued successfully:', queueId);
   return { queueId };

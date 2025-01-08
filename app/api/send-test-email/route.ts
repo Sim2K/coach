@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendEmail } from '@/lib/email/email-service';
+import { sendEmail } from '@/lib/email/node/email-service';
 import { EMAIL_CONSTANTS } from '@/lib/email/constants';
 
 export async function POST(req: NextRequest) {

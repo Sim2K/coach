@@ -1,10 +1,14 @@
+// Debug log for scheduler configuration
+console.log('Loading email scheduler configuration...');
+console.log('API Key from env:', process.env.EMAIL_SCHEDULER_API_KEY);
+
 export const EMAIL_CONSTANTS = {
   // SMTP Configuration
   SMTP: {
     HOST: process.env.SMTP_SERVER_HOST || 'smtp.gmail.com',
     PORT: parseInt(process.env.SMTP_SERVER_PORT || '587', 10),
-    USERNAME: process.env.SMTP_SERVER_USERNAME,
-    PASSWORD: process.env.SMTP_SERVER_PASSWORD,
+    USERNAME: process.env.SMTP_SERVER_USERNAME || '',
+    PASSWORD: process.env.SMTP_SERVER_PASSWORD || '',
     SECURE: process.env.SMTP_SECURE === 'true',
   },
 
@@ -44,5 +48,22 @@ export const EMAIL_CONSTANTS = {
     RATE_LIMIT_EXCEEDED: 'Rate limit exceeded',
     SMTP_ERROR: 'SMTP server error',
     QUEUE_TIMEOUT: 'Queue processing timeout',
+  },
+
+  // Scheduler Configuration
+  SCHEDULER: {
+    MAX_RETRIES: parseInt(process.env.EMAIL_SCHEDULER_MAX_RETRIES || '3', 10),
+    RETRY_DELAY: parseInt(process.env.EMAIL_SCHEDULER_RETRY_DELAY || '300000', 10), // 5 minutes
+    BATCH_SIZE: parseInt(process.env.EMAIL_SCHEDULER_BATCH_SIZE || '50', 10),
+    TIMEZONE_DEFAULT: process.env.EMAIL_SCHEDULER_TIMEZONE_DEFAULT || 'UTC',
+    API_KEY: process.env.EMAIL_SCHEDULER_API_KEY || '2DYEjLR7RL2p84ZJfyY6', // Fallback to the key from .env.local
+  },
+
+  // Scheduler Error Messages
+  SCHEDULER_ERRORS: {
+    UNAUTHORIZED: 'Unauthorized access to scheduler endpoint',
+    INVALID_TIMEZONE: 'Invalid timezone specified',
+    SCHEDULING_ERROR: 'Error scheduling email',
+    DATABASE_ERROR: 'Error accessing email database',
   },
 } as const;

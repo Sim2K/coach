@@ -1,4 +1,4 @@
-import { QueueItem, EmailMessage, EmailStatus, EmailPriority } from '../types';
+import { QueueItem, EmailMessage, EmailStatus, EmailPriority, EmailOptions } from '../types';
 import { EMAIL_CONSTANTS } from '../constants';
 
 class EmailQueue {
@@ -20,19 +20,18 @@ class EmailQueue {
 
   public async addToQueue(
     message: EmailMessage,
-    priority: EmailPriority = 'normal'
+    options?: EmailOptions
   ): Promise<string> {
     const id = generateQueueId();
     const queueItem: QueueItem = {
       id,
       message,
       status: 'pending',
-      priority,
+      priority: options?.priority || 'normal',
       attempts: 0,
       createdAt: new Date(),
-      scheduledFor: message.options?.scheduled,
+      scheduledFor: options?.scheduled,
     };
-
     this.queue.set(id, queueItem);
     
     if (!this.processing) {
