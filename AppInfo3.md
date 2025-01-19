@@ -65,6 +65,143 @@ lib/email/
     └── validators.ts   # Validation rules
 ```
 
+### Email System Architecture
+
+#### Type System
+The email system uses a unified type system with the following key interfaces:
+
+```typescript
+// Core Email Types (lib/email/types.ts)
+interface EmailMessage {
+  to: string | string[];
+  from: string;
+  replyTo?: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  cc?: string;
+  bcc?: string;
+  attachments?: EmailAttachment[];
+  options?: EmailOptions;
+}
+
+interface EmailOptions {
+  priority?: EmailPriority;
+  scheduled?: Date;
+  tracking?: boolean;
+  retryAttempts?: number;
+}
+
+interface EmailAttachment {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+  size: number;
+}
+```
+
+#### Service Structure
+The email system is divided into specialized services:
+
+1. **Node.js Email Service** (`lib/email/node/email-service.ts`)
+   - Full-featured email service with Node.js capabilities
+   - Handles attachments with file system access
+   - Uses queue system for email processing
+
+2. **Edge Email Service** (`lib/email/edge/email-service.ts`)
+   - Streamlined version for Edge runtime
+   - Limited to URL and Buffer-based attachments
+   - Direct email sending without queuing
+
+3. **Queue Service** (`lib/email/queue/queue-service.ts`)
+   - Manages email queuing and processing
+   - Handles scheduling and prioritization
+   - Provides status tracking and retry logic
+
+4. **Scheduler Service** (`lib/email/scheduler/scheduler-service.ts`)
+   - Manages scheduled email sending
+   - Integrates with Supabase for persistence
+   - Handles timezone conversion and validation
+
+#### Constants and Configuration
+Email configuration is centralized in `lib/email/constants.ts`:
+
+```typescript
+EMAIL_CONSTANTS = {
+  SMTP: {
+    HOST: process.env.SMTP_SERVER_HOST,
+    PORT: process.env.SMTP_SERVER_PORT,
+    USERNAME: process.env.SMTP_SERVER_USERNAME,
+    PASSWORD: process.env.SMTP_SERVER_PASSWORD,
+    SECURE: process.env.SMTP_SECURE
+  },
+  EMAIL: {
+    FROM: process.env.EMAIL_FROM,
+    REPLY_TO: process.env.EMAIL_REPLY_TO,
+    BCC: process.env.EMAIL_BCC
+  }
+}
+```
+
+#### Best Practices and Learnings
+
+1. **Type Safety**
+   - Always import types from their canonical location (`lib/email/types.ts`)
+   - Use explicit type annotations for complex objects
+   - Maintain consistent type definitions across services
+   - Add type guards where necessary
+
+2. **Service Organization**
+   - Keep Node.js and Edge services separate
+   - Use dependency injection for services
+   - Maintain clear service boundaries
+   - Document runtime requirements
+
+3. **Error Prevention**
+   - Validate email message structure before processing
+   - Use environment variables with defaults
+   - Implement comprehensive error handling
+   - Add logging for debugging
+
+4. **Code Organization**
+   - Group related functionality in dedicated modules
+   - Use clear and consistent naming conventions
+   - Maintain single responsibility principle
+   - Document public interfaces
+
+5. **Common Pitfalls to Avoid**
+   - Mixing Node.js and Edge runtime code
+   - Using incorrect type imports
+   - Missing required fields in message objects
+   - Inconsistent property names across interfaces
+
+#### Future Improvements
+1. Add comprehensive input validation
+2. Implement better error reporting
+3. Add metrics collection
+4. Enhance queue management
+5. Improve attachment handling
+6. Add support for email templates
+
+#### Dependencies
+- nodemailer: Email sending
+- luxon: Date/time handling
+- @supabase/supabase-js: Database integration
+
+#### Environment Variables
+Required variables:
+```
+SMTP_SERVER_HOST=smtp.example.com
+SMTP_SERVER_PORT=587
+SMTP_SERVER_USERNAME=user
+SMTP_SERVER_PASSWORD=pass
+SMTP_SECURE=false
+EMAIL_FROM=sender@example.com
+EMAIL_REPLY_TO=noreply@example.com
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
 ### Email Scheduler System
 
 #### Directory Structure
@@ -119,6 +256,63 @@ EMAIL_SCHEDULER_BATCH_SIZE=50
 EMAIL_SCHEDULER_TIMEZONE_DEFAULT=UTC
 EMAIL_SCHEDULER_API_KEY=your-secure-api-key
 ```
+
+#### Cron Job Configuration
+
+The email scheduler runs every 3 hours, starting at midnight (00:00). The cron expression is:
+
+```
+0 */3 * * *
+```
+
+This cron expression breaks down as:
+- `0` - At minute 0 (top of the hour)
+- `*/3` - Every 3rd hour
+- `*` - Every day
+- `*` - Every month
+- `*` - Every day of the week
+
+Daily execution times (24-hour format):
+- 00:00
+- 03:00
+- 06:00
+- 09:00
+- 12:00
+- 15:00
+- 18:00
+- 21:00
+
+To implement this in different environments:
+
+1. **Linux/Unix Crontab**:
+```bash
+0 */3 * * * /usr/bin/curl -X POST -H "Authorization: Bearer ${EMAIL_SCHEDULER_API_KEY}" https://coach.veedence.com/api/webhook/email-scheduler
+```
+
+2. **Windows Task Scheduler**:
+- Trigger: Daily
+- Recur every: 1 day
+- Repeat task every: 3 hours
+- For a duration of: 24 hours
+- Start time: 12:00:00 AM
+
+3. **Vercel Cron Jobs**:
+```json
+{
+  "crons": [{
+    "path": "/api/webhook/email-scheduler",
+    "schedule": "0 */3 * * *"
+  }]
+}
+```
+
+4. **GitHub Actions**:
+```yaml
+schedule:
+  - cron: '0 */3 * * *'
+```
+
+Note: All times are in UTC. Adjust the schedule according to your timezone requirements.
 
 ### Configuration
 Environment variables required for email functionality:
@@ -847,21 +1041,32 @@ Components:
 
 ### User Profile Table (`userprofile`)
 ```sql
-create table public.userprofile (
+table
+  public.userprofile (
     user_id uuid not null,
     first_name text null,
     last_name text null,
-    email text null,
-    phone text null,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    is_active boolean default false not null,
-    induction_complete boolean default false not null,
-    last_login timestamp with time zone null,
-    subscription_end_date timestamp with time zone null,
+    coaching_style_preference text null,
+    feedback_frequency text null,
+    privacy_settings jsonb null,
+    is_active boolean null default true,
+    last_logged_in timestamp with time zone null,
+    nick_name text null,
+    user_email text null,
+    induction_complete boolean null default false,
+    country text null,
+    city text null,
+    age numeric null,
+    gender text null,
+    last_donation timestamp with time zone null,
+    admin boolean null default false,
+    subscription_end_date date null default (now() + '30 days'::interval),
+    date_joined timestamp with time zone null default now(),
+    timezone text null default 'UTC'::text,
+    language text null default 'en-gb'::text,
     constraint userprofile_pkey primary key (user_id),
-    constraint userprofile_user_id_fkey foreign key (user_id) references auth.users(id) on delete cascade
-);
+    constraint userprofile_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
 ```
 
 ### Framework Tables
@@ -1927,7 +2132,7 @@ BEGIN
 
     RETURN result;
 
-    -----------------------  \New Update Section ---------------------
+    ---------------- /Update the UPDATE ---------------------
 
     ELSE
         RAISE EXCEPTION 'Invalid action type: %', action_type;
@@ -2829,8 +3034,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE
-OR REPLACE FUNCTION public.ac_fn_as_view_user_engagement_feedback (user_idx UUID) RETURNS json AS $$
+CREATE OR REPLACE FUNCTION public.ac_fn_as_view_user_engagement_feedback (user_idx UUID) RETURNS json AS $$
 DECLARE
     result json;
 BEGIN
@@ -2961,7 +3165,6 @@ BEGIN
             g.progress AS goal_progress,
             g.target_date AS goal_target_date,
             g.review_needed AS goal_review_needed,
-            g.review_previous_goal AS previous_goal_data,
             -- Aggregate milestones for each goal
             COALESCE(
                 json_agg(
@@ -3257,3 +3460,5 @@ Notes:
 - [edge cases]
 - [limitations]
 */
+
+```

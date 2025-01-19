@@ -37,6 +37,8 @@ interface UserProfile {
   age: number | null;
   gender: string | null;
   subscription_end_date: string | null;
+  timezone: string | null;
+  language: string | null;
 }
 
 export default function ProfilePage() {
@@ -223,7 +225,6 @@ export default function ProfilePage() {
                           <SelectContent>
                             <SelectItem value="male">Male</SelectItem>
                             <SelectItem value="female">Female</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
                             <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
                           </SelectContent>
                         </Select>
@@ -285,7 +286,82 @@ export default function ProfilePage() {
                           <SelectContent>
                             <SelectItem value="daily">Daily</SelectItem>
                             <SelectItem value="weekly">Weekly</SelectItem>
-                            <SelectItem value="monthly">Monthly</SelectItem>
+                            <SelectItem value="twice-weekly">Twice-Weekly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Timezone</Label>
+                        <Select
+                          value={formData.timezone || "UTC"}
+                          onValueChange={(value) => handleInputChange("timezone", value)}
+                          disabled={!isEditing}
+                        >
+                          <SelectTrigger className="mt-1.5">
+                            <SelectValue placeholder="Select your timezone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="UTC">UTC (Coordinated Universal Time)</SelectItem>
+                            <SelectItem value="UTC-12:00">Baker Island (UTC-12:00)</SelectItem>
+                            <SelectItem value="UTC-11:00">American Samoa (UTC-11:00)</SelectItem>
+                            <SelectItem value="UTC-10:00">Hawaii (UTC-10:00)</SelectItem>
+                            <SelectItem value="UTC-09:00">Alaska (UTC-09:00)</SelectItem>
+                            <SelectItem value="UTC-08:00">Pacific Time (UTC-08:00)</SelectItem>
+                            <SelectItem value="UTC-07:00">Mountain Time (UTC-07:00)</SelectItem>
+                            <SelectItem value="UTC-06:00">Central Time, Mexico City (UTC-06:00)</SelectItem>
+                            <SelectItem value="UTC-05:00">Eastern Time, Bogota (UTC-05:00)</SelectItem>
+                            <SelectItem value="UTC-04:00">Atlantic Time, Caracas (UTC-04:00)</SelectItem>
+                            <SelectItem value="UTC-03:00">Buenos Aires, Sao Paulo (UTC-03:00)</SelectItem>
+                            <SelectItem value="UTC-02:00">Fernando de Noronha (UTC-02:00)</SelectItem>
+                            <SelectItem value="UTC-01:00">Cape Verde (UTC-01:00)</SelectItem>
+                            <SelectItem value="UTC+00:00">London, Dublin, Lisbon (UTC+00:00)</SelectItem>
+                            <SelectItem value="UTC+01:00">Paris, Rome, Berlin (UTC+01:00)</SelectItem>
+                            <SelectItem value="UTC+02:00">Cairo, Jerusalem, Athens (UTC+02:00)</SelectItem>
+                            <SelectItem value="UTC+03:00">Moscow, Istanbul (UTC+03:00)</SelectItem>
+                            <SelectItem value="UTC+04:00">Dubai, Baku (UTC+04:00)</SelectItem>
+                            <SelectItem value="UTC+05:00">Karachi, Tashkent (UTC+05:00)</SelectItem>
+                            <SelectItem value="UTC+05:30">Mumbai, Colombo (UTC+05:30)</SelectItem>
+                            <SelectItem value="UTC+06:00">Dhaka, Almaty (UTC+06:00)</SelectItem>
+                            <SelectItem value="UTC+07:00">Bangkok, Jakarta (UTC+07:00)</SelectItem>
+                            <SelectItem value="UTC+08:00">Singapore, Beijing (UTC+08:00)</SelectItem>
+                            <SelectItem value="UTC+09:00">Tokyo, Seoul (UTC+09:00)</SelectItem>
+                            <SelectItem value="UTC+10:00">Sydney, Melbourne (UTC+10:00)</SelectItem>
+                            <SelectItem value="UTC+11:00">Solomon Islands (UTC+11:00)</SelectItem>
+                            <SelectItem value="UTC+12:00">Auckland, Fiji (UTC+12:00)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Language</Label>
+                        <Select
+                          value={formData.language || "en-gb"}
+                          onValueChange={(value) => handleInputChange("language", value)}
+                          disabled={!isEditing}
+                        >
+                          <SelectTrigger className="mt-1.5">
+                            <SelectValue placeholder="Select your language" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="en-gb">British English</SelectItem>
+                            <SelectItem value="en-us">American English</SelectItem>
+                            <SelectItem value="es-ES">Spanish (Spain)</SelectItem>
+                            <SelectItem value="es-MX">Mexican Spanish</SelectItem>
+                            <SelectItem value="fr-FR">French</SelectItem>
+                            <SelectItem value="de-DE">German</SelectItem>
+                            <SelectItem value="it-IT">Italian</SelectItem>
+                            <SelectItem value="pt-BR">Brazilian Portuguese</SelectItem>
+                            <SelectItem value="pt-PT">Portuguese (Portugal)</SelectItem>
+                            <SelectItem value="nl-NL">Dutch</SelectItem>
+                            <SelectItem value="pl-PL">Polish</SelectItem>
+                            <SelectItem value="ru-RU">Russian</SelectItem>
+                            <SelectItem value="ja-JP">Japanese</SelectItem>
+                            <SelectItem value="zh-CN">Chinese (Simplified)</SelectItem>
+                            <SelectItem value="zh-TW">Chinese (Traditional)</SelectItem>
+                            <SelectItem value="ko-KR">Korean</SelectItem>
+                            <SelectItem value="ar-SA">Arabic</SelectItem>
+                            <SelectItem value="hi-IN">Hindi</SelectItem>
+                            <SelectItem value="tr-TR">Turkish</SelectItem>
+                            <SelectItem value="vi-VN">Vietnamese</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
